@@ -3,7 +3,7 @@ package crowd
 import (
 	//"fmt"
 	"reflect"
-	_ "sort"
+	"sync"
 )
 
 type E map[interface{}]interface{}
@@ -97,19 +97,26 @@ func (c *Crowd) Group(fnKey, fnValue FnTo) *Crowd {
 	if fnValue == nil {
 		fnValue = self
 	}
+
 	//_ = "breakpoint"
+	wg := new(sync.WaitGroup)
 	for _, v := range c.Data {
-		groupId := fnKey(v)
-		value := fnValue(v)
-		var datas []interface{}
-		data, exist := GroupData[groupId]
-		if !exist {
-			datas = []interface{}{value}
-		} else {
-			datas = append(data.([]interface{}), value)
-		}
-		GroupData[groupId] = datas
+		wg.Add(1)
+		go func(v interface{}, GroupData E, wg *sync.WaitGroup) {
+			groupId := fnKey(v)
+			value := fnValue(v)
+			var datas []interface{}
+			data, exist := GroupData[groupId]
+			if !exist {
+				datas = []interface{}{value}
+			} else {
+				datas = append(data.([]interface{}), value)
+			}
+			GroupData[groupId] = datas
+			wg.Done()
+		}(v, GroupData, wg)
 	}
+	wg.Wait()
 	//_ = "breakpoint"
 
 	return From(GroupData)

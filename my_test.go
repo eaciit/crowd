@@ -66,10 +66,14 @@ func TestSliceSort(t *testing.T) {
 		}
 	}
 
-	sorted := NewSortSlice(x, fsort).Sort().Slice()[0:10]
+	sorted := NewSortSlice(x, fsort, fcompare).Sort().Slice()[0:10]
 	fmt.Printf("Results:\n%v\nSorted:\n%v\n", x[0:10], sorted)
 }
 
-func fsort(so SortItem) float64 {
-	return float64(so.Value.(int))
+func fsort(so SortItem) interface{} {
+	return so.Value
+}
+
+func fcompare(a, b interface{}) bool {
+	return a.(int) < b.(int)
 }

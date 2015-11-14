@@ -9,10 +9,13 @@ type SortItem struct {
 	Value interface{}
 }
 
-type FnSort func(SortItem) float64
+type FnSortGet func(SortItem) interface{}
+type FnSortCompare func(interface{}, interface{}) bool
+
 type Sorter struct {
-	Items  []SortItem
-	FnSort FnSort
+	Items    []SortItem
+	Getter   FnSortGet
+	Comparer FnSortCompare
 }
 
 func (s *Sorter) Len() int {
@@ -25,35 +28,43 @@ func (s *Sorter) Swap(i, j int) {
 
 func (s *Sorter) Less(i, j int) bool {
 	//_ = "breakpoint"
-	if s.FnSort == nil {
-		return false
+	if s.Getter == nil {
+		s.Getter = func(so SortItem) interface{} {
+			return so.Value
+		}
 	}
-	fi := s.FnSort(s.Items[i])
-	fj := s.FnSort(s.Items[j])
-	return fi < fj
+
+	if s.Comparer == nil {
+		return true
+	}
+
+	fi := s.Getter(s.Items[i])
+	fj := s.Getter(s.Items[j])
+	return s.Comparer(fi, fj)
 }
 
-func NewSorter(mis []SortItem, fn FnSort) *Sorter {
+func NewSorter(mis []SortItem, fn FnSortGet, fnc FnSortCompare) *Sorter {
 	so := new(Sorter)
 	so.Items = mis
-	so.FnSort = fn
+	so.Getter = fn
+	so.Comparer = fnc
 	return so
 }
 
-func NewSortSlice(is []interface{}, fn FnSort) *Sorter {
+func NewSortSlice(is []interface{}, fn FnSortGet, fnc FnSortCompare) *Sorter {
 	mis := []SortItem{}
 	for i, v := range is {
 		mis = append(mis, SortItem{i, v})
 	}
-	return NewSorter(mis, fn)
+	return NewSorter(mis, fn, fnc)
 }
 
-func NewSortMap(is E, fn FnSort) *Sorter {
+func NewSortMap(is E, fn FnSortGet, fnc FnSortCompare) *Sorter {
 	mis := []SortItem{}
 	for i, v := range is {
 		mis = append(mis, SortItem{i, v})
 	}
-	return NewSorter(mis, fn)
+	return NewSorter(mis, fn, fnc)
 }
 
 func (s *Sorter) Sort() *Sorter {
