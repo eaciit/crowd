@@ -12,8 +12,8 @@ var (
 
 func prepareData() []int {
 	ret := []int{}
-	for i := 0; i <= 1000; i++ {
-		ret = append(ret, toolkit.RandInt(5000))
+	for i := 0; i <= 1000000; i++ {
+		ret = append(ret, toolkit.RandInt(1000000))
 	}
 	return ret
 }
@@ -42,20 +42,22 @@ func TestAvg(t *testing.T) {
 	}
 }
 
-func g(x interface{}) interface{} {
+func fg(x interface{}) interface{} {
 	i := x.(int)
-	return i / 100
+	return i / 1000
+	return i
 }
 
 func TestGroupSubset(t *testing.T) {
-	g := From(prepareData()).Group(g, nil).Subset(10, 0).Data
+	//t.Skip()
+	g := From(prepareData()).Group(fg, nil).Subset(5, 0).Data
 	for k, v := range g {
 		fmt.Printf("k:%v, v:%s\n", k, toolkit.JsonString(v))
 	}
 }
 
 func TestSliceSort(t *testing.T) {
-	g := From(prepareData()).Group(g, nil).Slice()
+	g := From(prepareData()).Group(fg, nil).Slice()
 	x := []interface{}{}
 	for _, v := range g {
 		ints := v.([]interface{})
@@ -64,9 +66,10 @@ func TestSliceSort(t *testing.T) {
 		}
 	}
 
-	sorted := NewSortSlice(x, func(so SortItem) float64 {
-		return 0
-		//return float64(so.Value.(int))
-	}).Sort().Slice()
-	fmt.Printf("Results:\n%v\nSorted:\n%v\n", x, sorted)
+	sorted := NewSortSlice(x, fsort).Sort().Slice()[0:10]
+	fmt.Printf("Results:\n%v\nSorted:\n%v\n", x[0:10], sorted)
+}
+
+func fsort(so SortItem) float64 {
+	return float64(so.Value.(int))
 }

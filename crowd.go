@@ -134,16 +134,14 @@ func (c *Crowd) Subset(take, skip int) *Crowd {
 		if takeFlag {
 			ret[c.Keys[taken]] = c.Data[c.Keys[taken]]
 			taken++
-			if taken == take {
+			if taken >= take {
 				inloop = false
 			}
 		}
 
-		if !inloop {
-			idx++
-			if idx == dataLength {
-				inloop = false
-			}
+		idx++
+		if idx >= dataLength {
+			inloop = false
 		}
 	}
 

@@ -9,7 +9,7 @@ type SortItem struct {
 	Value interface{}
 }
 
-type FnSort func(interface{}) float64
+type FnSort func(SortItem) float64
 type Sorter struct {
 	Items  []SortItem
 	FnSort FnSort
