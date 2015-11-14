@@ -10,12 +10,16 @@ var (
 	data []int = []int{1, 2, 3, 4}
 )
 
+var randoms []int
+
 func prepareData() []int {
-	ret := []int{}
-	for i := 0; i <= 1000000; i++ {
-		ret = append(ret, toolkit.RandInt(1000000))
+	if randoms == nil {
+		randoms = []int{}
+		for i := 0; i <= 1000000; i++ {
+			randoms = append(randoms, toolkit.RandInt(1000000))
+		}
 	}
-	return ret
+	return randoms
 }
 
 func TestLen(t *testing.T) {
@@ -52,7 +56,7 @@ func TestGroupSubset(t *testing.T) {
 	//t.Skip()
 	g := From(prepareData()).Group(fg, nil).Subset(5, 0).Data
 	for k, v := range g {
-		fmt.Printf("k:%v, v:%s\n", k, toolkit.JsonString(v))
+		fmt.Printf("k:%v, v:%s\n", k, toolkit.JsonString(v.([]interface{})[0:2]))
 	}
 }
 
@@ -66,8 +70,10 @@ func TestSliceSort(t *testing.T) {
 		}
 	}
 
-	sorted := NewSortSlice(x, fsort, fcompare).Sort().Slice()[0:10]
-	fmt.Printf("Results:\n%v\nSorted:\n%v\n", x[0:10], sorted)
+	sorted := NewSortSlice(x, fsort, fcompare).
+		Sort().
+		Slice()[len(randoms)-100 : len(randoms)]
+	fmt.Printf("Sample Results:\n%v\nSorted:\n%v\n", x[0:10], sorted)
 }
 
 func fsort(so SortItem) interface{} {
