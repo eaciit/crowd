@@ -13,10 +13,11 @@ var (
 var randoms []int
 
 func prepareData() []int {
+	dataNo := 10000
 	if randoms == nil {
 		randoms = []int{}
-		for i := 0; i <= 1000000; i++ {
-			randoms = append(randoms, toolkit.RandInt(1000000))
+		for i := 0; i < dataNo; i++ {
+			randoms = append(randoms, toolkit.RandInt(dataNo))
 		}
 	}
 	return randoms
@@ -72,8 +73,8 @@ func TestSliceSort(t *testing.T) {
 
 	sorted := NewSortSlice(x, fsort, fcompare).
 		Sort().
-		Slice()[len(randoms)-100 : len(randoms)]
-	fmt.Printf("Sample Results:\n%v\nSorted:\n%v\n", x[0:10], sorted)
+		Slice()[0:100]
+	fmt.Printf("Sample Results:\n%v\nSorted:\n%v\n", x[0:100], sorted)
 }
 
 func fsort(so SortItem) interface{} {
