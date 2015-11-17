@@ -100,21 +100,27 @@ func (c *Crowd) Group(fnKey, fnValue FnTo) *Crowd {
 
 	//_ = "breakpoint"
 	wg := new(sync.WaitGroup)
+	mtx := new(sync.Mutex)
 	for _, v := range c.Data {
 		wg.Add(1)
-		go func(v interface{}, GroupData E, wg *sync.WaitGroup) {
+		go func(v interface{}, GroupData *E,
+			wg *sync.WaitGroup, mtx *sync.Mutex) {
+			gd := *GroupData
 			groupId := fnKey(v)
 			value := fnValue(v)
 			var datas []interface{}
-			data, exist := GroupData[groupId]
+			//data, exist := GroupData[groupId]
+			mtx.Lock()
+			data, exist := gd[groupId]
 			if !exist {
 				datas = []interface{}{value}
 			} else {
 				datas = append(data.([]interface{}), value)
 			}
-			GroupData[groupId] = datas
+			gd[groupId] = datas
+			mtx.Unlock()
 			wg.Done()
-		}(v, GroupData, wg)
+		}(v, &GroupData, wg, mtx)
 	}
 	wg.Wait()
 	//_ = "breakpoint"
