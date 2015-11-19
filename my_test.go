@@ -81,7 +81,7 @@ func FindOne(t *testing.T){
 	}
 }
 
-func FindOne(t *testing.T){
+func Find(t *testing.T){
 	es := From(data).FindOne(func(x interface{})bool{
 		return x<=2
 	}).Data;
