@@ -47,6 +47,51 @@ func TestAvg(t *testing.T) {
 	}
 }
 
+/*
+func TestMax(t *testing.T) {
+	i := From(data).Max(nil)
+	if i != 4 {
+		t.Errorf("Expect %d got %2.0f", 4, i)
+		return
+	}
+}
+
+func TestMin(t *testing.T) {
+	i := From(data).Max(nil)
+	if i != 1 {
+		t.Errorf("Expect %d got %2.0f", 1, i)
+		return
+	}
+}
+
+
+func TestMean(t *testing.T){
+}
+
+func TestMedian(t *testing.T){
+}
+
+func FindOne(t *testing.T){
+	i := From(data).FindOne(func(x interface{})bool{
+		return x==2
+	});
+	if i==nil || i.(int) != 2 {
+		t.Errorf("Expect %d got %v", 2, i)
+		return
+	}
+}
+
+func FindOne(t *testing.T){
+	es := From(data).FindOne(func(x interface{})bool{
+		return x<=2
+	}).Data;
+	if es.Len()==0 {
+		t.Errorf("Got none")
+		return
+	}
+}
+*/
+
 func fg(x interface{}) interface{} {
 	i := x.(int)
 	return i / 1000
