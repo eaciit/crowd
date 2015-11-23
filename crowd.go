@@ -161,6 +161,77 @@ func (c *Crowd) Subset(take, skip int) *Crowd {
 	return From(ret)
 }
 
+func (c *Crowd) Max(fn FnTo) int {
+	var maximum interface{}
+	maximum = c.Data[0]
+
+	for _, val := range c.Data {
+		if val.(int) > maximum.(int) {
+			maximum = val
+		}
+	}
+	return maximum.(int)
+}
+
+func (c *Crowd) Min(fn FnTo) int {
+	var maximum interface{}
+	maximum = c.Data[0]
+
+	for _, val := range c.Data {
+		if val.(int) < maximum.(int) {
+			maximum = val
+		}
+	}
+	return maximum.(int)
+}
+
+func (c *Crowd) FindOne(fn interface{}) interface{} {
+	v := make([]int, 0, len(c.Data))
+	for _, value := range c.Data {
+		v = append(v, value.(int))
+	}
+	return v
+}
+
+func (c *Crowd) Find(fn interface{}) *Crowd {
+	dataLength := c.Len()
+	ret := E{}
+	for i := 0; i < dataLength; i++ {
+		ret[c.Keys[i]] = c.Data[c.Keys[i]]
+	}
+	return From(ret)
+}
+
+func (c *Crowd) Median(fn FnTo) interface{} {
+	var v []float64
+	var result float64
+
+	for _, value := range c.Data {
+		v = append(v, toF64(value.(int)))
+	}
+
+	devied := len(v) / 2
+	result = v[devied]
+	if len(v)%2 == 0 {
+		result = (result + v[devied-1]) / 2
+	}
+	return result
+}
+
+func (c *Crowd) Mean(fn FnTo) interface{} {
+	var v []float64
+	var result float64
+	// v := make([]int, 0, c.Len())
+	for _, value := range c.Data {
+		v = append(v, toF64(value.(int)))
+	}
+
+	for _, each := range v {
+		result += each
+	}
+	return result
+}
+
 /*
 func (c *Crowd) Sort(fn FnTo) *Crowd {
 	type sortObj Crowd
