@@ -161,28 +161,55 @@ func (c *Crowd) Subset(take, skip int) *Crowd {
 	return From(ret)
 }
 
-func (c *Crowd) Max(fn FnTo) int {
-	var maximum interface{}
-	maximum = c.Data[0]
+func (c *Crowd) Max(fn FnTo) interface{} {
+	var res []float64
+	var max float64 = 0
+	var eachVal float64
+	key := 0
+
+	if fn == nil {
+		fn = self
+	}
 
 	for _, val := range c.Data {
-		if val.(int) > maximum.(int) {
-			maximum = val
+		res = append(res, toF64(fn(val)))
+	}
+
+	for key, eachVal = range res {
+		switch {
+		case key == 0:
+			max = eachVal
+		case eachVal > max:
+			max = eachVal
 		}
 	}
-	return maximum.(int)
+
+	return max
 }
 
-func (c *Crowd) Min(fn FnTo) int {
-	var maximum interface{}
-	maximum = c.Data[0]
+func (c *Crowd) Min(fn FnTo) interface{} {
+	var res []float64
+	var min float64 = 0
+	var eachVal float64
+	key := 0
+
+	if fn == nil {
+		fn = self
+	}
 
 	for _, val := range c.Data {
-		if val.(int) < maximum.(int) {
-			maximum = val
+		res = append(res, toF64(fn(val)))
+	}
+
+	for key, eachVal = range res {
+		switch {
+		case key == 0:
+			min = eachVal
+		case eachVal < min:
+			min = eachVal
 		}
 	}
-	return maximum.(int)
+	return min
 }
 
 func (c *Crowd) FindOne(fn interface{}) interface{} {
@@ -210,16 +237,17 @@ func (c *Crowd) Median(fn FnTo) interface{} {
 		v = append(v, toF64(value.(int)))
 	}
 
-	devied := len(v) / 2
-	result = v[devied]
+	devided := len(v) / 2
+	result = v[devided]
 	if len(v)%2 == 0 {
-		result = (result + v[devied-1]) / 2
+		result = (result + v[devided-1]) / 2
 	}
 	return result
 }
 
 func (c *Crowd) Mean(fn FnTo) interface{} {
 	var v []float64
+	var TotalSum float64
 	var result float64
 	// v := make([]int, 0, c.Len())
 	for _, value := range c.Data {
@@ -227,8 +255,9 @@ func (c *Crowd) Mean(fn FnTo) interface{} {
 	}
 
 	for _, each := range v {
-		result += each
+		TotalSum += each
 	}
+	result = TotalSum / toF64(c.Len())
 	return result
 }
 
