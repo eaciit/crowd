@@ -80,20 +80,11 @@ func TestMedian(t *testing.T) {
 }
 
 func FindOne(t *testing.T) {
-	var i interface{}
 	i = From(data).FindOne(func(x interface{}) bool {
 		return x == 2
 	})
-	var val interface{}
-	m := i.([]int)
-	for _, each := range m {
-		if each == 2 {
-			val = each
-		}
-	}
-
-	if val == nil || val.(int) != 2 {
-		t.Errorf("Expect %d got %v", 2, val)
+	if i == nil || i.(int) != 2 {
+		t.Errorf("Expect %d got %v", 2, i)
 		return
 	}
 }

@@ -161,7 +161,7 @@ func (c *Crowd) Subset(take, skip int) *Crowd {
 	return From(ret)
 }
 
-func (c *Crowd) Max(fn FnTo) interface{} {
+func (c *Crowd) Max(fn FnTo) float64 {
 	var res []float64
 	var max float64 = 0
 	var eachVal float64
@@ -187,7 +187,7 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 	return max
 }
 
-func (c *Crowd) Min(fn FnTo) interface{} {
+func (c *Crowd) Min(fn FnTo) float64 {
 	var res []float64
 	var min float64 = 0
 	var eachVal float64
@@ -212,21 +212,25 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 	return min
 }
 
-func (c *Crowd) FindOne(fn interface{}) interface{} {
-	v := make([]int, 0, len(c.Data))
-	for _, value := range c.Data {
-		v = append(v, value.(int))
+func (c *Crowd) FindOne(fn func(interface{}) bool) interface{} {
+	var v interface{}
+	for _, val := range c.Data {
+		if fn(val) == true {
+			v = val
+		}
 	}
 	return v
 }
 
 func (c *Crowd) Find(fn interface{}) *Crowd {
-	dataLength := c.Len()
-	ret := E{}
-	for i := 0; i < dataLength; i++ {
-		ret[c.Keys[i]] = c.Data[c.Keys[i]]
+	var v []interface{}
+	for _, val := range c.Data {
+		if fn(val) == true {
+			v = append(v, val)
+		}
+
 	}
-	return From(ret)
+	return From(v)
 }
 
 func (c *Crowd) Median(fn FnTo) interface{} {
