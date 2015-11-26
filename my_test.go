@@ -80,7 +80,7 @@ func TestMedian(t *testing.T) {
 }
 
 func FindOne(t *testing.T) {
-	i = From(data).FindOne(func(x interface{}) bool {
+	i := From(data).FindOne(func(x interface{}) bool {
 		return x == 2
 	})
 	if i == nil || i.(int) != 2 {

@@ -161,68 +161,95 @@ func (c *Crowd) Subset(take, skip int) *Crowd {
 	return From(ret)
 }
 
-func (c *Crowd) Max(fn FnTo) float64 {
-	var res []float64
-	var max float64 = 0
-	var eachVal float64
-	key := 0
-
+func (c *Crowd) Max(fn FnTo) interface{} {
 	if fn == nil {
 		fn = self
 	}
 
+	var maxValue interface{}
+	var maxInt int
+	var maxFloat float64
+	var maxString string
 	for _, val := range c.Data {
-		res = append(res, toF64(fn(val)))
-	}
-
-	for key, eachVal = range res {
-		switch {
-		case key == 0:
-			max = eachVal
-		case eachVal > max:
-			max = eachVal
+		fnResult := fn(val)
+		v := reflect.ValueOf(fnResult).Kind()
+		if v == reflect.String {
+			switch {
+			case fnResult.(string) > maxString:
+				maxString = fnResult.(string)
+			}
+			maxValue = maxString
+		} else if v == reflect.Int || v == reflect.Int8 {
+			switch {
+			case fnResult.(int) > maxInt:
+				maxInt = fnResult.(int)
+			}
+			maxValue = maxInt
+		} else if v == reflect.Float32 || v == reflect.Float64 {
+			switch {
+			case val.(float64) > maxFloat:
+				maxFloat = val.(float64)
+			}
+			maxValue = maxFloat
 		}
 	}
 
-	return max
+	return maxValue
 }
 
-func (c *Crowd) Min(fn FnTo) float64 {
-	var res []float64
-	var min float64 = 0
-	var eachVal float64
-	key := 0
-
+func (c *Crowd) Min(fn FnTo) interface{} {
 	if fn == nil {
 		fn = self
 	}
 
-	for _, val := range c.Data {
-		res = append(res, toF64(fn(val)))
-	}
-
-	for key, eachVal = range res {
-		switch {
-		case key == 0:
-			min = eachVal
-		case eachVal < min:
-			min = eachVal
+	var minValue interface{}
+	var minInt int
+	var minFloat float64
+	var minString string
+	for key, val := range c.Data {
+		fnResult := fn(val)
+		v := reflect.ValueOf(fnResult).Kind()
+		if v == reflect.String {
+			switch {
+			case key == 0:
+				minString = fnResult.(string)
+			case fnResult.(string) < minString:
+				minString = fnResult.(string)
+			}
+			minValue = minString
+		} else if v == reflect.Int || v == reflect.Int8 {
+			switch {
+			case key == 0:
+				minInt = fnResult.(int)
+			case fnResult.(int) < minInt:
+				minInt = fnResult.(int)
+			}
+			minValue = minInt
+		} else if v == reflect.Float32 || v == reflect.Float64 {
+			switch {
+			case key == 0:
+				minFloat = fnResult.(float64)
+			case val.(float64) < minFloat:
+				minFloat = val.(float64)
+			}
+			minValue = minFloat
 		}
 	}
-	return min
+
+	return minValue
 }
 
 func (c *Crowd) FindOne(fn func(interface{}) bool) interface{} {
 	var v interface{}
 	for _, val := range c.Data {
 		if fn(val) == true {
-			v = val
+			return val
 		}
 	}
 	return v
 }
 
-func (c *Crowd) Find(fn interface{}) *Crowd {
+func (c *Crowd) Find(fn func(interface{}) bool) *Crowd {
 	var v []interface{}
 	for _, val := range c.Data {
 		if fn(val) == true {
@@ -234,35 +261,54 @@ func (c *Crowd) Find(fn interface{}) *Crowd {
 }
 
 func (c *Crowd) Median(fn FnTo) interface{} {
-	var v []float64
+	var v []interface{}
 	var result float64
 
 	for _, value := range c.Data {
-		v = append(v, toF64(value.(int)))
+		v = append(v, value)
+
 	}
 
 	devided := len(v) / 2
-	result = v[devided]
+	result = toF64(v[devided])
 	if len(v)%2 == 0 {
-		result = (result + v[devided-1]) / 2
+		result = (result + toF64(v[devided-1])) / 2
 	}
 	return result
 }
 
 func (c *Crowd) Mean(fn FnTo) interface{} {
-	var v []float64
+	var v []interface{}
 	var TotalSum float64
 	var result float64
 	// v := make([]int, 0, c.Len())
 	for _, value := range c.Data {
-		v = append(v, toF64(value.(int)))
+		v = append(v, value)
 	}
 
 	for _, each := range v {
-		TotalSum += each
+		TotalSum += toF64(each)
 	}
 	result = TotalSum / toF64(c.Len())
 	return result
+}
+
+func dataTypeCheck(v reflect.Kind) string {
+	var typeOfValue string
+
+	switch v {
+	case reflect.Int:
+		typeOfValue = "int"
+		break
+	case reflect.Float64:
+		typeOfValue = "float64"
+		break
+	case reflect.String:
+		typeOfValue = "string"
+		break
+	}
+
+	return typeOfValue
 }
 
 /*
