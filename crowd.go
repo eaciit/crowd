@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"reflect"
 	"sync"
+	"time"
 )
 
 type E map[interface{}]interface{}
@@ -166,14 +167,34 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 		fn = self
 	}
 
-	var maxValue interface{}
-	var maxInt int
-	var maxFloat float64
-	var maxString string
+	var (
+		maxValue   interface{}
+		maxInt     int
+		maxFloat64 float64
+		maxString  string
+		maxUint    uint
+		maxUint8   uint8
+		maxUint16  uint16
+		maxUint32  uint32
+		maxUint64  uint64
+		maxDate    string
+	)
+
 	for _, val := range c.Data {
 		fnResult := fn(val)
 		v := reflect.ValueOf(fnResult).Kind()
+		b := IsDate(val)
+		if b == true {
+			dateTime := fnResult.(time.Time).Format("2006-1-2")
+			switch {
+			case dateTime > maxDate:
+				maxDate = dateTime
+			}
+			maxValue = maxDate
+		}
+
 		if v == reflect.String {
+			// fmt.Printf("%s\n", fnResult)
 			switch {
 			case fnResult.(string) > maxString:
 				maxString = fnResult.(string)
@@ -187,10 +208,40 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 			maxValue = maxInt
 		} else if v == reflect.Float32 || v == reflect.Float64 {
 			switch {
-			case val.(float64) > maxFloat:
-				maxFloat = val.(float64)
+			case fnResult.(float64) > maxFloat64:
+				maxFloat64 = fnResult.(float64)
 			}
-			maxValue = maxFloat
+			maxValue = maxFloat64
+		} else if v == reflect.Uint {
+			switch {
+			case fnResult.(uint) > maxUint:
+				maxUint = fnResult.(uint)
+			}
+			maxValue = maxUint
+		} else if v == reflect.Uint8 {
+			switch {
+			case fnResult.(uint8) > maxUint8:
+				maxUint8 = fnResult.(uint8)
+			}
+			maxValue = maxUint8
+		} else if v == reflect.Uint16 {
+			switch {
+			case fnResult.(uint16) > maxUint16:
+				maxUint16 = fnResult.(uint16)
+			}
+			maxValue = maxUint16
+		} else if v == reflect.Uint32 {
+			switch {
+			case fnResult.(uint32) > maxUint32:
+				maxUint32 = fnResult.(uint32)
+			}
+			maxValue = maxUint32
+		} else if v == reflect.Uint64 {
+			switch {
+			case fnResult.(uint64) < maxUint64:
+				maxUint64 = fnResult.(uint64)
+			}
+			maxValue = maxUint64
 		}
 	}
 
@@ -202,13 +253,30 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		fn = self
 	}
 
-	var minValue interface{}
-	var minInt int
-	var minFloat float64
-	var minString string
+	var (
+		minValue   interface{}
+		minInt     int
+		minFloat64 float64
+		minString  string
+		minUint    uint
+		minUint8   uint8
+		minUint16  uint16
+		minUint32  uint32
+		minUint64  uint64
+		minDate    []string
+		b          bool
+	)
+
 	for key, val := range c.Data {
 		fnResult := fn(val)
 		v := reflect.ValueOf(fnResult).Kind()
+
+		b = IsDate(val)
+		if b == true {
+			dateTime := fnResult.(time.Time).Format("2006-1-2")
+			minDate = append(minDate, dateTime)
+		}
+
 		if v == reflect.String {
 			switch {
 			case key == 0:
@@ -228,12 +296,70 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		} else if v == reflect.Float32 || v == reflect.Float64 {
 			switch {
 			case key == 0:
-				minFloat = fnResult.(float64)
-			case val.(float64) < minFloat:
-				minFloat = val.(float64)
+				minFloat64 = fnResult.(float64)
+			case val.(float64) < minFloat64:
+				minFloat64 = val.(float64)
 			}
-			minValue = minFloat
+			minValue = minFloat64
+		} else if v == reflect.Uint {
+			switch {
+			case key == 0:
+				minUint = fnResult.(uint)
+			case val.(uint) < minUint:
+				minUint = val.(uint)
+			}
+			minValue = minUint
+		} else if v == reflect.Uint8 {
+			switch {
+			case key == 0:
+				minUint8 = fnResult.(uint8)
+			case val.(uint8) < minUint8:
+				minUint8 = val.(uint8)
+			}
+			minValue = minUint8
+		} else if v == reflect.Uint16 {
+			switch {
+			case key == 0:
+				minUint16 = fnResult.(uint16)
+			case val.(uint16) < minUint16:
+				minUint16 = val.(uint16)
+			}
+			minValue = minUint16
+		} else if v == reflect.Uint32 {
+			switch {
+			case key == 0:
+				minUint32 = fnResult.(uint32)
+			case val.(uint32) < minUint32:
+				minUint32 = val.(uint32)
+			}
+			minValue = minUint32
+		} else if v == reflect.Uint64 {
+			switch {
+			case key == 0:
+				minUint64 = fnResult.(uint64)
+			case val.(uint64) < minUint64:
+				minUint64 = val.(uint64)
+			}
+			minValue = minUint64
 		}
+	}
+
+	if b == true {
+		var getMinDate = func(n []string) string {
+			var min string
+			for i, e := range n {
+				switch {
+				case i == 0:
+					min = e
+				case e < min:
+					min = e
+				}
+			}
+			return min
+		}
+
+		var min = getMinDate(minDate)
+		minValue = min
 	}
 
 	return minValue
@@ -293,22 +419,13 @@ func (c *Crowd) Mean(fn FnTo) interface{} {
 	return result
 }
 
-func dataTypeCheck(v reflect.Kind) string {
-	var typeOfValue string
-
-	switch v {
-	case reflect.Int:
-		typeOfValue = "int"
-		break
-	case reflect.Float64:
-		typeOfValue = "float64"
-		break
-	case reflect.String:
-		typeOfValue = "string"
-		break
+func IsDate(o interface{}) bool {
+	t := reflect.TypeOf(o)
+	name := t.PkgPath() + "." + t.Name()
+	if name == "time.Time" {
+		return true
 	}
-
-	return typeOfValue
+	return false
 }
 
 /*
