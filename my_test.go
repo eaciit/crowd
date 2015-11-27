@@ -93,8 +93,8 @@ func TestMaxFloat(t *testing.T) {
 func TestMaxDate(t *testing.T) {
 	i := From(dataDate).Max(nil)
 
-	if i.(string) != "2015-11-26" {
-		t.Errorf("Expect %s got %2.0f", "2015-11-26", i)
+	if i.(string) != "27-Nov-2015" {
+		t.Errorf("Expect %s got %2.0f", "27-Nov-2015", i)
 		return
 	}
 }
@@ -134,8 +134,8 @@ func TestMinDate(t *testing.T) {
 		return x
 	})
 
-	if i.(string) != "2015-11-23" {
-		t.Errorf("Expect %s got %2.0f", "2015-11-23", i)
+	if i.(string) != "24-Nov-2015" {
+		t.Errorf("Expect %s got %2.0f", "24-Nov-2015", i)
 		return
 	}
 }
