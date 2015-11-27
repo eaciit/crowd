@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"reflect"
 	"sync"
+	"time"
 )
 
 type E map[interface{}]interface{}
@@ -166,20 +167,36 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 		fn = self
 	}
 
-	var maxValue interface{}
-	var maxInt int
-	var maxFloat float64
-	var maxString string
+	var (
+		maxValue   interface{}
+		maxInt     int
+		maxFloat64 float64
+		maxString  string
+		maxDate    int64
+	)
+
 	for _, val := range c.Data {
 		fnResult := fn(val)
 		v := reflect.ValueOf(fnResult).Kind()
+		b := IsDate(val)
+		if b == true {
+			dateTime := int64(fnResult.(time.Time).UnixNano())
+			switch {
+			case dateTime > maxDate:
+				maxDate = dateTime
+			}
+			maxValue = time.Unix(0, maxDate).Format("2-Jan-2006")
+		}
+
 		if v == reflect.String {
 			switch {
 			case fnResult.(string) > maxString:
 				maxString = fnResult.(string)
 			}
 			maxValue = maxString
-		} else if v == reflect.Int || v == reflect.Int8 {
+		} else if v == reflect.Int || v == reflect.Int8 || v == reflect.Uint ||
+			v == reflect.Uint8 || v == reflect.Uint16 || v == reflect.Uint32 ||
+			v == reflect.Uint64 {
 			switch {
 			case fnResult.(int) > maxInt:
 				maxInt = fnResult.(int)
@@ -187,10 +204,10 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 			maxValue = maxInt
 		} else if v == reflect.Float32 || v == reflect.Float64 {
 			switch {
-			case val.(float64) > maxFloat:
-				maxFloat = val.(float64)
+			case fnResult.(float64) > maxFloat64:
+				maxFloat64 = fnResult.(float64)
 			}
-			maxValue = maxFloat
+			maxValue = maxFloat64
 		}
 	}
 
@@ -202,13 +219,48 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		fn = self
 	}
 
-	var minValue interface{}
-	var minInt int
-	var minFloat float64
-	var minString string
+	var (
+		minValue   interface{}
+		minInt     int
+		minFloat64 float64
+		minString  string
+		minDate    int64
+		b          bool
+	)
+
 	for key, val := range c.Data {
 		fnResult := fn(val)
 		v := reflect.ValueOf(fnResult).Kind()
+
+		b = IsDate(val)
+		if b == true {
+			a := int64(fnResult.(time.Time).UnixNano())
+			switch {
+			case key == 0:
+				if minDate < a {
+					if minDate == 0 {
+						minDate = a
+					} else {
+						minDate = minDate
+					}
+				} else {
+					minDate = a
+				}
+				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
+				minValue = getDateValue
+			case minDate < a:
+				if minDate == 0 {
+					minDate = a
+				}
+				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
+				minValue = getDateValue
+			case a < minDate:
+				minDate = a
+				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
+				minValue = getDateValue
+			}
+		}
+
 		if v == reflect.String {
 			switch {
 			case key == 0:
@@ -217,7 +269,9 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 				minString = fnResult.(string)
 			}
 			minValue = minString
-		} else if v == reflect.Int || v == reflect.Int8 {
+		} else if v == reflect.Int || v == reflect.Int8 || v == reflect.Uint ||
+			v == reflect.Uint8 || v == reflect.Uint16 || v == reflect.Uint32 ||
+			v == reflect.Uint64 {
 			switch {
 			case key == 0:
 				minInt = fnResult.(int)
@@ -228,11 +282,11 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		} else if v == reflect.Float32 || v == reflect.Float64 {
 			switch {
 			case key == 0:
-				minFloat = fnResult.(float64)
-			case val.(float64) < minFloat:
-				minFloat = val.(float64)
+				minFloat64 = fnResult.(float64)
+			case val.(float64) < minFloat64:
+				minFloat64 = val.(float64)
 			}
-			minValue = minFloat
+			minValue = minFloat64
 		}
 	}
 
@@ -281,7 +335,7 @@ func (c *Crowd) Mean(fn FnTo) interface{} {
 	var v []interface{}
 	var TotalSum float64
 	var result float64
-	// v := make([]int, 0, c.Len())
+
 	for _, value := range c.Data {
 		v = append(v, value)
 	}
@@ -293,22 +347,13 @@ func (c *Crowd) Mean(fn FnTo) interface{} {
 	return result
 }
 
-func dataTypeCheck(v reflect.Kind) string {
-	var typeOfValue string
-
-	switch v {
-	case reflect.Int:
-		typeOfValue = "int"
-		break
-	case reflect.Float64:
-		typeOfValue = "float64"
-		break
-	case reflect.String:
-		typeOfValue = "string"
-		break
+func IsDate(o interface{}) bool {
+	t := reflect.TypeOf(o)
+	name := t.PkgPath() + "." + t.Name()
+	if name == "time.Time" {
+		return true
 	}
-
-	return typeOfValue
+	return false
 }
 
 /*

@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"github.com/eaciit/toolkit"
 	"testing"
+	"time"
 )
 
+var t = time.Now()
 var (
-	data []int = []int{1, 2, 3, 4}
+	data       []int       = []int{1, 2, 3, 4}
+	dataString []string    = []string{"1", "2", "3", "4"}
+	dataFloat  []float64   = []float64{2.5, 3.2, 6.7, 5.5}
+	dataDate   []time.Time = []time.Time{
+		t.AddDate(0, 0, -3), //date now
+		t.AddDate(0, 0, -2),
+		t.AddDate(0, 0, -1),
+		t.AddDate(0, 0, 0),
+	}
 )
 
 var randoms []int
@@ -47,18 +57,85 @@ func TestAvg(t *testing.T) {
 	}
 }
 
-func TestMax(t *testing.T) {
-	i := From(data).Max(nil)
+func TestMaxInt(t *testing.T) {
+	i := From(data).Max(func(x interface{}) interface{} {
+		return x
+	})
+
 	if i != 4 {
 		t.Errorf("Expect %d got %2.0f", 4, i)
 		return
 	}
 }
 
-func TestMin(t *testing.T) {
+func TestMaxString(t *testing.T) {
+	i := From(dataString).Max(func(x interface{}) interface{} {
+		return x
+	})
+
+	if i.(string) != "4" {
+		t.Errorf("Expect %d got %2.0f", 4, i)
+		return
+	}
+}
+
+func TestMaxFloat(t *testing.T) {
+	i := From(dataFloat).Max(func(x interface{}) interface{} {
+		return x
+	})
+
+	if i.(float64) != 6.7 {
+		t.Errorf("Expect %d got %2.0f", 6.7, i)
+		return
+	}
+}
+
+func TestMaxDate(t *testing.T) {
+	i := From(dataDate).Max(nil)
+
+	if i.(string) != "27-Nov-2015" {
+		t.Errorf("Expect %s got %2.0f", "27-Nov-2015", i)
+		return
+	}
+}
+
+func TestMinInt(t *testing.T) {
 	i := From(data).Min(nil)
 	if i != 1 {
 		t.Errorf("Expect %d got %2.0f", 1, i)
+		return
+	}
+}
+
+func TestMinString(t *testing.T) {
+	i := From(dataString).Min(func(x interface{}) interface{} {
+		return x
+	})
+
+	if i.(string) != "1" {
+		t.Errorf("Expect %d got %2.0f", "1", i)
+		return
+	}
+}
+
+func TestMinFloat(t *testing.T) {
+	i := From(dataFloat).Min(func(x interface{}) interface{} {
+		return x
+	})
+
+	if i.(float64) != 2.5 {
+		t.Errorf("Expect %d got %2.0f", 2.5, i)
+		return
+	}
+}
+
+func TestMinDate(t *testing.T) {
+	i := From(dataDate).Min(func(x interface{}) interface{} {
+		return x
+	})
+
+	if i.(string) != "24-Nov-2015" {
+		t.Errorf("Expect %s got %2.0f", "24-Nov-2015", i)
 		return
 	}
 }
