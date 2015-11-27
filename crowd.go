@@ -237,10 +237,25 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 			a := int64(fnResult.(time.Time).UnixNano())
 			switch {
 			case key == 0:
-				minDate = a
-				getDateValue := time.Unix(0, a).Format("2-Jan-2006")
+				if minDate < a {
+					if minDate == 0 {
+						minDate = a
+					} else {
+						minDate = minDate
+					}
+				} else {
+					minDate = a
+				}
+				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
 				minValue = getDateValue
 			case minDate < a:
+				if minDate == 0 {
+					minDate = a
+				}
+				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
+				minValue = getDateValue
+			case a < minDate:
+				minDate = a
 				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
 				minValue = getDateValue
 			}
