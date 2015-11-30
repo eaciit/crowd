@@ -13,10 +13,10 @@ var (
 	dataString []string    = []string{"1", "2", "3", "4"}
 	dataFloat  []float64   = []float64{2.5, 3.2, 6.7, 5.5}
 	dataDate   []time.Time = []time.Time{
-		t.AddDate(0, 0, -3), //date now
-		t.AddDate(0, 0, -2),
-		t.AddDate(0, 0, -1),
-		t.AddDate(0, 0, 0),
+		time.Date(2015, time.November, 26, 0, 0, 0, 0, time.UTC),
+		time.Date(2015, time.November, 27, 0, 0, 0, 0, time.UTC),
+		time.Date(2015, time.November, 28, 0, 0, 0, 0, time.UTC),
+		time.Date(2015, time.November, 29, 0, 0, 0, 0, time.UTC),
 	}
 )
 
@@ -93,8 +93,9 @@ func TestMaxFloat(t *testing.T) {
 func TestMaxDate(t *testing.T) {
 	i := From(dataDate).Max(nil)
 
-	if i.(string) != "27-Nov-2015" {
-		t.Errorf("Expect %s got %2.0f", "27-Nov-2015", i)
+	timeDate := time.Date(2015, time.November, 29, 0, 0, 0, 0, time.UTC)
+	if i.(time.Time) != timeDate {
+		t.Errorf("Expect %s got %s", "2015-11-29 07:00:00 +0700 ICT", i)
 		return
 	}
 }
@@ -134,8 +135,9 @@ func TestMinDate(t *testing.T) {
 		return x
 	})
 
-	if i.(string) != "24-Nov-2015" {
-		t.Errorf("Expect %s got %2.0f", "24-Nov-2015", i)
+	timeDate := time.Date(2015, time.November, 26, 0, 0, 0, 0, time.UTC)
+	if i.(time.Time) != timeDate {
+		t.Errorf("Expect %s got %s", "2015-11-26 07:00:00 +0700 ICT", i)
 		return
 	}
 }
