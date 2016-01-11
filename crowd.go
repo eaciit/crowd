@@ -179,14 +179,6 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 		fnResult := fn(val)
 		v := reflect.ValueOf(fnResult).Kind()
 		b := IsDate(val)
-		if b == true {
-			dateTime := int64(fnResult.(time.Time).UnixNano())
-			switch {
-			case dateTime > maxDate:
-				maxDate = dateTime
-			}
-			maxValue = time.Unix(0, maxDate).Format("2-Jan-2006")
-		}
 
 		if v == reflect.String {
 			switch {
@@ -208,6 +200,13 @@ func (c *Crowd) Max(fn FnTo) interface{} {
 				maxFloat64 = fnResult.(float64)
 			}
 			maxValue = maxFloat64
+		} else if b == true {
+			dateTime := int64(fnResult.(time.Time).UnixNano())
+			switch {
+			case dateTime > maxDate:
+				maxDate = dateTime
+				maxValue = fnResult
+			}
 		}
 	}
 
@@ -224,7 +223,7 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		minInt     int
 		minFloat64 float64
 		minString  string
-		minDate    int64
+		minDate    int64 = int64(time.Date(time.Now().Year()+10000, time.December, 31, 0, 0, 0, 0, time.UTC).UnixNano())
 		b          bool
 	)
 
@@ -233,33 +232,6 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 		v := reflect.ValueOf(fnResult).Kind()
 
 		b = IsDate(val)
-		if b == true {
-			a := int64(fnResult.(time.Time).UnixNano())
-			switch {
-			case key == 0:
-				if minDate < a {
-					if minDate == 0 {
-						minDate = a
-					} else {
-						minDate = minDate
-					}
-				} else {
-					minDate = a
-				}
-				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
-				minValue = getDateValue
-			case minDate < a:
-				if minDate == 0 {
-					minDate = a
-				}
-				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
-				minValue = getDateValue
-			case a < minDate:
-				minDate = a
-				getDateValue := time.Unix(0, minDate).Format("2-Jan-2006")
-				minValue = getDateValue
-			}
-		}
 
 		if v == reflect.String {
 			switch {
@@ -287,6 +259,13 @@ func (c *Crowd) Min(fn FnTo) interface{} {
 				minFloat64 = val.(float64)
 			}
 			minValue = minFloat64
+		} else if b == true {
+			dateTime := int64(fnResult.(time.Time).UnixNano())
+			switch {
+			case dateTime < minDate:
+				minDate = dateTime
+				minValue = fnResult
+			}
 		}
 	}
 
