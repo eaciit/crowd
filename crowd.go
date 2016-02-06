@@ -27,9 +27,7 @@ const (
 )
 
 type Crowd struct {
-	data     interface{}
-	dataType string
-
+	SliceBase
 	Error error
 }
 
@@ -53,15 +51,6 @@ func From(data interface{}) *Crowd {
 		c.Error = errors.New("From: Data is not a pointer of slice")
 	}
 	return c
-}
-
-func (c *Crowd) Len() int {
-	v := indirect(c.data)
-	return v.Len()
-}
-
-func (c *Crowd) Item(idx int) interface{} {
-	return toolkit.SliceItem(c.data, idx)
 }
 
 func (c *Crowd) Min(fn FnCrowd) interface{} {
