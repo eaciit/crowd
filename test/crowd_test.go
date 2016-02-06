@@ -1,4 +1,4 @@
-package v05test
+package v05_test
 
 import (
 	"github.com/eaciit/crowd"
