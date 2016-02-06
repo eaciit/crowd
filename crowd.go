@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/eaciit/toolkit"
 	"reflect"
+	"sort"
 )
 
 type FnCrowd func(x interface{}) interface{}
@@ -137,4 +138,76 @@ func (c *Crowd) Avg(fn FnCrowd) float64 {
 	//e := toolkit.Serde(sum, &ret, "json")
 
 	return sum / float64(l)
+}
+
+func (c *Crowd) Group(fnKey FnCrowd, fnChild FnCrowd) map[interface{}][]interface{} {
+	ret := map[interface{}][]interface{}{}
+	l := c.Len()
+	fnKey = _fn(fnKey)
+	fnChild = _fn(fnChild)
+	for i := 0; i < l; i++ {
+		item := c.Item(i)
+		k := fnKey(item)
+		v := fnChild(item)
+		_, has := ret[k]
+		if !has {
+			ret[k] = []interface{}{}
+		}
+		ret[k] = append(ret[k], v)
+	}
+	return ret
+}
+
+func (c *Crowd) Apply(fn FnCrowd, copyResult bool, copyTarget interface{}) (e error) {
+	l := c.Len()
+	if l == 0 {
+		return
+	}
+
+	if copyResult && (!toolkit.IsPointer(copyTarget) || !toolkit.IsSlice(copyTarget)) {
+		e = errors.New("crowd.Apply: copyTarget is not a pointer of slice")
+		return
+	}
+
+	fn = _fn(fn)
+	for i := 0; i < l; i++ {
+		applyResult := fn(c.Item(i))
+		if copyResult {
+			e = toolkit.AppendSlice(copyTarget, applyResult)
+			if e != nil {
+				e = errors.New(toolkit.Sprintf("crowd.Apply: [%d] %s", e.Error()))
+				return
+			}
+
+		}
+	}
+
+	return
+}
+
+func (c *Crowd) Sort(fn FnCrowd) (e error) {
+	l := c.Len()
+	if l == 0 {
+		return
+	}
+
+	var keys []int
+	fn = _fn(fn)
+	for i := 0; i < l; i++ {
+		sortkey := fn(i).(int)
+		keys = append(keys, sortkey)
+	}
+
+	keysorter, _ := NewSorter(keys, fn)
+	sort.Sort(keysorter)
+	for i, v := range keys {
+		if i != v {
+			si := toolkit.SliceItem(c.data, i)
+			sv := toolkit.SliceItem(c.data, v)
+
+			toolkit.SliceSetItem(c.data, i, sv)
+			toolkit.SliceSetItem(c.data, v, si)
+		}
+	}
+	return
 }
