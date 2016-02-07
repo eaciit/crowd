@@ -44,10 +44,16 @@ func (s *Sorter) Swap(i, j int) {
 func (s *Sorter) Less(i, j int) bool {
 	v0 := s.FnSort(s.Item(i))
 	v1 := s.FnSort(s.Item(j))
-	return toolkit.Compare(v0, v1, "$lt")
+
+	if s.Direction == SortAscending {
+		return toolkit.Compare(v0, v1, "$lt")
+	} else {
+		return toolkit.Compare(v0, v1, "$gt")
+	}
 }
 
 func (s *Sorter) Sort(direction SortDirection) interface{} {
+	s.Direction = direction
 	sort.Sort(s)
 	return s.data
 }
