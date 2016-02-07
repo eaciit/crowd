@@ -20,6 +20,10 @@ func (p *Pipe) From(fn interface{}) *Pipe {
 	return p
 }
 
+func (p *Pipe) Map(fn interface{}) *Pipe {
+	return p
+}
+
 func (p *Pipe) Sort(fn interface{}) *Pipe {
 	return p
 }
