@@ -2,8 +2,8 @@ package v05_test
 
 import (
 	"github.com/eaciit/crowd"
-
-	//"github.com/eaciit/toolkit"
+	"github.com/eaciit/toolkit"
+	"math"
 	"testing"
 )
 
@@ -79,5 +79,34 @@ func TestAvg(t *testing.T) {
 
 	if m != avg {
 		t.Fatalf("Want %d got %d", avg, m)
+	}
+}
+
+func TestGroup(t *testing.T) {
+	stopInvalidC(t)
+	groups := c.Group(func(x interface{}) interface{} {
+		return x.(int) / 100
+	},
+		func(x interface{}) interface{} {
+			return struct {
+				X   int
+				Mod int
+			}{
+				x.(int),
+				int(math.Mod(float64(x.(int)), float64(100))),
+			}
+		})
+
+	x := 0
+	for _, childs := range groups {
+		x += len(childs)
+	}
+	toolkit.Println("Data: ", toolkit.JsonString(data))
+	toolkit.Println("Groups: ", groups)
+	l := len(data)
+	if x != l {
+		t.Fatalf("Expect %d got %d", l, x)
+	} else {
+		t.Logf("Expect %d got %d", l, x)
 	}
 }
