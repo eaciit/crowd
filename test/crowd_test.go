@@ -82,6 +82,25 @@ func TestAvg(t *testing.T) {
 	}
 }
 
+func TestCsort(t *testing.T) {
+	stopInvalidC(t)
+	toolkit.Println("Before sorting: ", toolkit.JsonString(data))
+	e := c.Sort(crowd.SortAscending, nil)
+	if e != nil {
+		t.Fatalf("Sort fail: " + e.Error())
+	}
+
+	toolkit.Println("After sorting Ascending: ", toolkit.JsonString(data))
+	min := 0
+	for _, v := range data {
+		if v < min {
+			t.Fatalf("Error: %d and %d", min, v)
+		} else {
+			min = v
+		}
+	}
+}
+
 func TestGroup(t *testing.T) {
 	stopInvalidC(t)
 	groups := c.Group(func(x interface{}) interface{} {

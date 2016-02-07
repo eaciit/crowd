@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/eaciit/toolkit"
 	"reflect"
-	"sort"
 )
 
 type FnCrowd func(x interface{}) interface{}
@@ -174,29 +173,23 @@ func (c *Crowd) Apply(fn FnCrowd, copyResult bool, copyTarget interface{}) (e er
 	return
 }
 
-func (c *Crowd) Sort(fn FnCrowd) (e error) {
+func (c *Crowd) Sort(direction SortDirection, fn FnCrowd) (e error) {
 	l := c.Len()
 	if l == 0 {
 		return
 	}
 
-	var keys []int
+	type sk struct {
+		Index   int
+		SortKey interface{}
+	}
+
 	fn = _fn(fn)
-	for i := 0; i < l; i++ {
-		sortkey := fn(i).(int)
-		keys = append(keys, sortkey)
+	keysorter, esort := NewSorter(c.data, fn)
+	if esort != nil {
+		e = errors.New("crowd.Sort: " + esort.Error())
+		return
 	}
-
-	keysorter, _ := NewSorter(keys, fn)
-	sort.Sort(keysorter)
-	for i, v := range keys {
-		if i != v {
-			si := toolkit.SliceItem(c.data, i)
-			sv := toolkit.SliceItem(c.data, v)
-
-			toolkit.SliceSetItem(c.data, i, sv)
-			toolkit.SliceSetItem(c.data, v, si)
-		}
-	}
+	keysorter.Sort(direction)
 	return
 }
