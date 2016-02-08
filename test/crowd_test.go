@@ -4,6 +4,7 @@ import (
 	"github.com/eaciit/crowd"
 	"github.com/eaciit/toolkit"
 	"math"
+	"sync"
 	"testing"
 )
 
@@ -19,21 +20,41 @@ func stopInvalidC(t *testing.T) {
 }
 
 func TestFromSlice(t *testing.T) {
-	data = []int{20, 30, 21, 24, 55, 102, 120, 180, 2, 95, 67, 1000, 210}
+	data = []int{2, 1000}
+	l := 1000000
+	mtx := new(sync.Mutex)
+	wg := new(sync.WaitGroup)
+	wg.Add(l)
+	for i := 0; i < l; i++ {
+		go func() {
+			defer wg.Done()
+			rnd := 5 + toolkit.RandInt(900)
+			mtx.Lock()
+			data = append(data, rnd)
+			mtx.Unlock()
+		}()
+	}
+	wg.Wait()
 	c = crowd.From(&data)
 	if c.Error != nil {
 		t.Fatalf("Error: " + c.Error.Error())
+	}
+
+	if len(data) != l+2 {
+		t.Fatalf("Want %d got %d", l+2, len(data))
 	}
 }
 
 func TestMin(t *testing.T) {
 	stopInvalidC(t)
 	m := c.Min(func(x interface{}) interface{} {
-		return x.(int) / 2
+		i := x.(int)
+		return i
 	}).(int)
 
-	if m != int(1) {
-		t.Fatalf("Want 1 got %v", m)
+	if m != int(2) {
+		t.Log("Data:\n", toolkit.JsonString(data[:100]))
+		t.Fatalf("Want 2 got %v", m)
 	}
 }
 
@@ -84,13 +105,13 @@ func TestAvg(t *testing.T) {
 
 func TestCsort(t *testing.T) {
 	stopInvalidC(t)
-	toolkit.Println("Before sorting: ", toolkit.JsonString(data))
+	toolkit.Println("Before sorting: ", toolkit.JsonString(data[:100]))
 	e := c.Sort(crowd.SortAscending, nil)
 	if e != nil {
 		t.Fatalf("Sort fail: " + e.Error())
 	}
 
-	toolkit.Println("After sorting Ascending: ", toolkit.JsonString(data))
+	toolkit.Println("After sorting Ascending: ", toolkit.JsonString(data[:100]))
 	min := 0
 	for _, v := range data {
 		if v < min {
@@ -120,8 +141,8 @@ func TestGroup(t *testing.T) {
 	for _, childs := range groups {
 		x += len(childs)
 	}
-	toolkit.Println("Data: ", toolkit.JsonString(data))
-	toolkit.Println("Groups: ", groups)
+	toolkit.Println("Data: ", toolkit.JsonString(data[:100]))
+	//toolkit.Println("Groups: ", groups[:10])
 	l := len(data)
 	if x != l {
 		t.Fatalf("Expect %d got %d", l, x)

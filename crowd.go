@@ -56,10 +56,13 @@ func (c *Crowd) Min(fn FnCrowd) interface{} {
 	var min interface{}
 	l := c.Len()
 
-	min, _ = toolkit.GetEmptySliceElement(c.data)
+	//min, _ = toolkit.GetEmptySliceElement(c.data)
 	fn = _fn(fn)
 	for i := 0; i < l; i++ {
 		item := fn(c.Item(i))
+		if item == int(0) {
+			toolkit.Println("Item ", i, "=0")
+		}
 		if i == 0 {
 			min = item
 		} else if toolkit.Compare(min, item, "$gt") {
