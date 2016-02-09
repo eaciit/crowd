@@ -8,8 +8,12 @@ const (
 	ScopeCluster ApplyScope = "cluster"
 )
 
+type PipeItem struct {
+}
+
 type Pipe struct {
-	c *Crowd
+	c     *Crowd
+	Items []*PipeItem
 }
 
 func (p *Pipe) Exec() interface{} {
