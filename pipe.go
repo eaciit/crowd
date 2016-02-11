@@ -11,16 +11,61 @@ const (
 type PipeItem struct {
 }
 
-type Pipe struct {
-	c     *Crowd
-	Items []*PipeItem
+type IPipeSource interface {
 }
 
-func (p *Pipe) Exec() interface{} {
+type PipeSource struct {
+}
+
+type Pipe struct {
+	c *Crowd
+
+	Items []*PipeItem
+
+	parsed bool
+	err    error
+}
+
+func (p *Pipe) Error() error {
+	return p.err
+}
+
+func (p *Pipe) ErrorTxt() string {
+	if p.err == nil {
+		return ""
+	}
+	return p.err.Error()
+}
+
+func (p *Pipe) Parsed() bool {
+	return p.parsed
+}
+
+func (p *Pipe) Parse() error {
+	p.err = nil
+	p.parsed = true
+	return p.err
+}
+
+func (p *Pipe) Exec(inputs interface{}) interface{} {
 	return nil
 }
 
-func (p *Pipe) From(fn interface{}) *Pipe {
+func (p *Pipe) ParseAndExec(inputs interface{}, reparse bool) {
+	if reparse || p.parsed == false {
+		p.Parse()
+	}
+	if p.Error() != nil {
+		return
+	}
+	p.Exec(inputs)
+}
+
+func (p *Pipe) Join(p1 *Pipe, p2 *Pipe, fnJoin interface{}) *Pipe {
+	return p
+}
+
+func (p *Pipe) From(s IPipeSource) *Pipe {
 	return p
 }
 
@@ -29,10 +74,6 @@ func (p *Pipe) Map(fn interface{}) *Pipe {
 }
 
 func (p *Pipe) Sort(fn interface{}) *Pipe {
-	return p
-}
-
-func (p *Pipe) Apply(scope ApplyScope, fn interface{}) *Pipe {
 	return p
 }
 
