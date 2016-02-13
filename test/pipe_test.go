@@ -16,12 +16,27 @@ type DataOut struct {
 }
 
 func TestPrepareData(t *testing.T) {
-	for i := 0; i < dataCount; dataCount++ {
-		dataPipe = append(data, toolkit.RandInt(600)+1)
+	for i := 0; i < dataCount; i++ {
+		dataPipe = append(dataPipe, toolkit.RandInt(600)+1)
 	}
+	if len(dataPipe) != dataCount {
+		t.Fatalf("Error: want %d data got %d", dataCount, len(dataPipe))
+	}
+	toolkit.Println("Data (20 samples): ", toolkit.JsonString(dataPipe[:20]))
 }
 
+func TestLoad(t *testing.T) {
+	pipe1 := new(crowd.Pipe).From((&crowd.PipeSource{}).SetData(&dataPipe))
+	outs := pipe1.ParseAndExec(nil, false)
+	if pipe1.ErrorTxt() != "" {
+		t.Fatalf("Error load: " + pipe1.ErrorTxt())
+	}
+	t.Logf("Data: " + toolkit.JsonString(outs))
+}
+
+/*
 func TestPipe(t *testing.T) {
+	t.Skip()
 	pipe1 := new(crowd.Pipe).From(nil).Map(func(x int) DataOut {
 		return DataOut{x / 100, x}
 	}).Sort(func(x DataOut) int {
@@ -48,4 +63,5 @@ func TestPipe(t *testing.T) {
 		toolkit.JsonString(pipe1.Data),
 		toolkit.JsonString(pipe2.Data),
 		toolkit.JsonString(pipe3.Data))
-}
+i}
+*/

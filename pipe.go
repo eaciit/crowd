@@ -8,15 +8,6 @@ const (
 	ScopeCluster ApplyScope = "cluster"
 )
 
-type PipeItem struct {
-}
-
-type IPipeSource interface {
-}
-
-type PipeSource struct {
-}
-
 type Pipe struct {
 	c *Crowd
 
@@ -51,14 +42,14 @@ func (p *Pipe) Exec(inputs interface{}) interface{} {
 	return nil
 }
 
-func (p *Pipe) ParseAndExec(inputs interface{}, reparse bool) {
+func (p *Pipe) ParseAndExec(inputs interface{}, reparse bool) interface{} {
 	if reparse || p.parsed == false {
 		p.Parse()
 	}
 	if p.Error() != nil {
-		return
+		return nil
 	}
-	p.Exec(inputs)
+	return p.Exec(inputs)
 }
 
 func (p *Pipe) Join(p1 *Pipe, p2 *Pipe, fnJoin interface{}) *Pipe {
