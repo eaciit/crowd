@@ -9,6 +9,7 @@ import (
 var dataCount int = 1000
 var pipe *crowd.Pipe
 var dataPipe []int
+var outs []int
 
 type DataOut struct {
 	Group int
@@ -26,7 +27,6 @@ func TestPrepareData(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	var outs []int
 	ds := new(crowd.PipeSource).SetData(&dataPipe)
 	pipe1 := new(crowd.Pipe).From(ds).SetOutput(&outs)
 	pipe1.ParseAndExec(nil, false)
@@ -36,7 +36,44 @@ func TestLoad(t *testing.T) {
 	if len(outs) != len(dataPipe) {
 		t.Fatalf("Error: want %d data got %d", len(dataPipe), len(outs))
 	}
+	for idx, val := range dataPipe {
+		if val != outs[idx] {
+			t.Fatalf("Data %d is not same. Expect %d got %d",
+				idx, val, outs[idx])
+		}
+	}
 	t.Logf("Data: " + toolkit.JsonString(outs[0:20]))
+}
+
+func TestWhereMap(t *testing.T) {
+	var outsmap []struct {
+		X int
+		Y int
+	}
+	pipe1 := new(crowd.Pipe).From(new(crowd.PipeSource).SetData(&dataPipe))
+	pipe1.Where(func(x int) bool {
+		return x <= 100
+	})
+	pipe1.Map(func(x int) struct {
+		X int
+		Y int
+	} {
+		return struct {
+			X int
+			Y int
+		}{x, x * 2}
+	})
+	pipe1.SetOutput(&outsmap)
+	pipe1.ParseAndExec(nil, false)
+	if pipe1.ErrorTxt() != "" {
+		t.Fatalf("Error: %s", pipe1.ErrorTxt())
+	}
+	for idx, v := range outsmap {
+		if v.X > 100 {
+			t.Fatalf("Data index %d, %d > 100", idx, v.X)
+		}
+	}
+	t.Logf("Data: " + toolkit.JsonString(outs[0:10]))
 }
 
 /*

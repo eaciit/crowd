@@ -83,6 +83,10 @@ func (p *Pipe) From(s IPipeSource) *Pipe {
 	return p
 }
 
+func (p *Pipe) Where(fn interface{}) *Pipe {
+	return p
+}
+
 func (p *Pipe) Map(fn interface{}) *Pipe {
 	return p
 }
