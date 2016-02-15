@@ -12,6 +12,7 @@ const (
 )
 
 type IPipeSource interface {
+	Data() interface{}
 	SetData(interface{}) IPipeSource
 	CurrentPos() int
 	Len() int
@@ -24,6 +25,10 @@ type PipeSource struct {
 	data       interface{}
 	currentPos int
 	dataLen    int
+}
+
+func (p *PipeSource) Data() interface{} {
+	return p.data
 }
 
 func (p *PipeSource) SetData(data interface{}) IPipeSource {
@@ -40,6 +45,7 @@ func (p *PipeSource) SetData(data interface{}) IPipeSource {
 	p.data = data
 	p.dataLen = toolkit.SliceLen(p.data)
 	p.currentPos = 0
+	//toolkit.Println("Data length: ", toolkit.SliceLen(p.data), " Data sample: ", toolkit.SliceSubset(p.data, 0, 20))
 	return p
 }
 

@@ -26,12 +26,17 @@ func TestPrepareData(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	pipe1 := new(crowd.Pipe).From((&crowd.PipeSource{}).SetData(&dataPipe))
-	outs := pipe1.ParseAndExec(nil, false)
+	var outs []int
+	ds := new(crowd.PipeSource).SetData(&dataPipe)
+	pipe1 := new(crowd.Pipe).From(ds).SetOutput(&outs)
+	pipe1.ParseAndExec(nil, false)
 	if pipe1.ErrorTxt() != "" {
 		t.Fatalf("Error load: " + pipe1.ErrorTxt())
 	}
-	t.Logf("Data: " + toolkit.JsonString(outs))
+	if len(outs) != len(dataPipe) {
+		t.Fatalf("Error: want %d data got %d", len(dataPipe), len(outs))
+	}
+	t.Logf("Data: " + toolkit.JsonString(outs[0:20]))
 }
 
 /*
