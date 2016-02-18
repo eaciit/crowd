@@ -8,6 +8,7 @@ import (
 
 type PipeItem struct {
 	attributes toolkit.M
+	nextPipe   *PipeItem
 }
 
 func (p *PipeItem) initAttributes() {
@@ -32,7 +33,9 @@ func (p *PipeItem) Run() {
 		p.Set("error", "OP is mandatory")
 		return
 	}
-	fn := p.Get("fn_"+op, nil)
+
+	//fn := p.Get("fn_"+op, nil)
+	fb := p.Get("fn", nil)
 	if fn == nil {
 		p.Set("error", toolkit.Sprintf("Function %s is not available", op))
 		return
@@ -45,7 +48,29 @@ func (p *PipeItem) Run() {
 
 	var ins []reflect.Value
 	var outs []reflect.Value
+
+	pIn := p.Get("in")
+	if toolkit.IsSlice(pIn) {
+		ins = append(ins, reflect.ValueOf(pIn))
+	} else {
+		pLen := toolkit.SliceLen(pIn)
+		for pIndex := 0; pIndex < pLen; pIndex++ {
+			ins := append(ins, reflect.ValueOf(toolkit.SliceItem(pIn, pIndex)))
+		}
+	}
+
 	outs = vfn.Call(ins)
 
-	p.Set("output", outs)
+	var vouts []interface{}
+	for _, out := range outs {
+		vouts := out.Interface()
+	}
+
+	//p.Set("output", outs)
+	if p.nextPipe != nil {
+		p.nextPipe.Set("in", vouts)
+		p.nextPipe.Run()
+	} else {
+		p.Set("output", vouts)
+	}
 }
