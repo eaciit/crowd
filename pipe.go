@@ -68,9 +68,10 @@ func (p *Pipe) Exec(parms toolkit.M) error {
 		parms = toolkit.M{}
 	}
 
-	p.Items[0].Set("parm", parms)
 	sLen := p.source.Len()
 	for sIndex := 0; sIndex < sLen; sIndex++ {
+		parms.Set("dataindex", sIndex)
+		p.Items[0].Set("parm", parms)
 		p.Items[0].Set("in", p.source.Seek(sIndex, SeekFromStart))
 		erun := p.Items[0].Run()
 		if erun != nil {
