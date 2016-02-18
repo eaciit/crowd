@@ -49,7 +49,7 @@ func (p *Pipe) Parse() error {
 	return p.err
 }
 
-func (p *Pipe) Exec(inputs interface{}) error {
+func (p *Pipe) Exec(parms toolkit.M) error {
 	if p.source == nil {
 		return errors.New("Pipe.Exec: Source is invalid")
 	}
@@ -64,7 +64,11 @@ func (p *Pipe) Exec(inputs interface{}) error {
 		return nil
 	}
 
-	p.Items[0].Set("parm", inputs)
+	if parms == nil {
+		parms = toolkit.M{}
+	}
+
+	p.Items[0].Set("parm", parms)
 	sLen := p.source.Len()
 	for sIndex := 0; sIndex < sLen; sIndex++ {
 		p.Items[0].Set("in", p.source.Seek(sIndex, SeekFromStart))
@@ -156,6 +160,7 @@ func (p *Pipe) addItem(pi *PipeItem) error {
 		lastpi.nextItem = pi
 	}
 
+	pi.Set("index", len(p.Items))
 	p.Items = append(p.Items, pi)
 
 	return nil

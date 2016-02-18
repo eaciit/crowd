@@ -32,6 +32,8 @@ func (p *PipeItem) SetError(err string) error {
 }
 
 func (p *PipeItem) Run() error {
+	parm := p.Get("parm", toolkit.M{}).(toolkit.M)
+	verbose := parm.Get("verbose", false).(bool)
 	op := strings.ToLower(p.Get("op", "").(string))
 	if op == "" {
 		//p.Set("error", "OP is mandatory")
@@ -61,13 +63,19 @@ func (p *PipeItem) Run() error {
 			ins = append(ins, reflect.ValueOf(toolkit.SliceItem(pIn, pIndex)))
 		}
 	}
-	//toolkit.Println(toolkit.JsonString(ins))
 
+	//toolkit.Println(toolkit.JsonString(ins))
 	outs = vfn.Call(ins)
 
 	var iouts []interface{}
 	for _, out := range outs {
 		iouts = append(iouts, out.Interface())
+	}
+
+	if verbose {
+		toolkit.Printf("Pipe %d %s: %s => %s\n", p.Get("index", 0).(int), op,
+			toolkit.JsonString(pIn),
+			toolkit.JsonString(iouts))
 	}
 
 	if op == "where" && iouts[0] == false {
@@ -81,7 +89,7 @@ func (p *PipeItem) Run() error {
 
 	//p.Set("output", outs)
 	if p.nextItem != nil {
-		p.nextItem.Set("parm", p.Get("parm", nil))
+		p.nextItem.Set("parm", parm)
 		p.nextItem.Set("in", iouts)
 		return p.nextItem.Run()
 	} else {

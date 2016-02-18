@@ -69,7 +69,7 @@ func TestWhereMap(t *testing.T) {
 		t.Fatalf("Error: %s", pipe1.ErrorTxt())
 	}
 
-	eExec := pipe1.Exec(nil)
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", true))
 	if eExec != nil {
 		t.Fatalf("Exec: %s", eExec.Error())
 	}
