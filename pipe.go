@@ -49,7 +49,7 @@ func (p *Pipe) Parse() error {
 	return p.err
 }
 
-func (p *Pipe) Exec(parms toolkit.M) error {
+func (p *Pipe) Exec(parm toolkit.M) error {
 	if p.source == nil {
 		return errors.New("Pipe.Exec: Source is invalid")
 	}
@@ -64,14 +64,14 @@ func (p *Pipe) Exec(parms toolkit.M) error {
 		return nil
 	}
 
-	if parms == nil {
-		parms = toolkit.M{}
+	if parm == nil {
+		parm = toolkit.M{}
 	}
 
 	sLen := p.source.Len()
 	for sIndex := 0; sIndex < sLen; sIndex++ {
-		parms.Set("dataindex", sIndex)
-		p.Items[0].Set("parm", parms)
+		parm = parm.Set("dataindex", sIndex)
+		p.Items[0].Set("parm", parm)
 		p.Items[0].Set("in", p.source.Seek(sIndex, SeekFromStart))
 		erun := p.Items[0].Run()
 		if erun != nil {
@@ -95,6 +95,19 @@ func (p *Pipe) ParseAndExec(inputs interface{}, reparse bool) {
 	p.Exec(inputs)
 }
 */
+
+func (p *Pipe) Partition(i int) *Pipe {
+	//p.Set("partition", i)
+	pi := new(PipeItem)
+	pi.Set("op", "partition")
+	pi.Set("partition", i)
+	eadd := p.addItem(pi)
+	if eadd != nil {
+		p.SetError(eadd.Error())
+		return p
+	}
+	return p
+}
 
 func (p *Pipe) SetOutput(o interface{}) *Pipe {
 	pi := new(PipeItem)

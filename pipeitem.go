@@ -74,7 +74,7 @@ func (p *PipeItem) Run() error {
 
 	if verbose {
 		toolkit.Printf("Data %d Pipe %d %s: %s => %s\n",
-			p.Get("dataindex", 0).(int),
+			p.Get("parm", nil).(toolkit.M).Get("dataindex", 0).(int),
 			p.Get("index", 0).(int), op,
 			toolkit.JsonString(pIn),
 			toolkit.JsonString(iouts))
