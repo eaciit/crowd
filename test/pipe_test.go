@@ -29,9 +29,9 @@ func TestPrepareData(t *testing.T) {
 func TestLoad(t *testing.T) {
 	ds := new(crowd.PipeSource).SetData(&dataPipe)
 	pipe1 := new(crowd.Pipe).From(ds).SetOutput(&outs)
-	pipe1.ParseAndExec(nil, false)
-	if pipe1.ErrorTxt() != "" {
-		t.Fatalf("Error load: " + pipe1.ErrorTxt())
+	e := pipe1.Exec(nil)
+	if e != nil {
+		t.Fatalf("Error load: " + e.Error())
 	}
 	if len(outs) != len(dataPipe) {
 		t.Fatalf("Error: want %d data got %d", len(dataPipe), len(outs))
@@ -63,11 +63,20 @@ func TestWhereMap(t *testing.T) {
 			Y int
 		}{x, x * 2}
 	})
+
 	pipe1.SetOutput(&outsmap)
-	pipe1.ParseAndExec(nil, false)
 	if pipe1.ErrorTxt() != "" {
 		t.Fatalf("Error: %s", pipe1.ErrorTxt())
 	}
+
+	eExec := pipe1.Exec(nil)
+	if eExec != nil {
+		t.Fatalf("Exec: %s", eExec.Error())
+	}
+	if len(outs) == 0 {
+		t.Fatalf("No record returned")
+	}
+
 	for idx, v := range outsmap {
 		if v.X > 100 {
 			t.Fatalf("Data index %d, %d > 100", idx, v.X)

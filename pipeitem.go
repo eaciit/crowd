@@ -8,7 +8,7 @@ import (
 
 type PipeItem struct {
 	attributes toolkit.M
-	nextPipe   *PipeItem
+	nextItem   *PipeItem
 }
 
 func (p *PipeItem) initAttributes() {
@@ -27,50 +27,65 @@ func (p *PipeItem) Get(k string, def interface{}) interface{} {
 	return p.attributes.Get(k, def)
 }
 
-func (p *PipeItem) Run() {
+func (p *PipeItem) SetError(err string) error {
+	return nil
+}
+
+func (p *PipeItem) Run() error {
 	op := strings.ToLower(p.Get("op", "").(string))
 	if op == "" {
-		p.Set("error", "OP is mandatory")
-		return
+		//p.Set("error", "OP is mandatory")
+		return p.SetError("OP is mandatory")
 	}
 
 	//fn := p.Get("fn_"+op, nil)
-	fb := p.Get("fn", nil)
+	fn := p.Get("fn", nil)
 	if fn == nil {
-		p.Set("error", toolkit.Sprintf("Function %s is not available", op))
-		return
+		return p.SetError(toolkit.Sprintf("Function %s is not available", op))
 	}
 
 	vfn := reflect.Indirect(reflect.ValueOf(fn))
 	if vfn.Kind() != reflect.Func {
-		p.Set("error", toolkit.Sprintf("Function %s is not a function", op))
+		return p.SetError(toolkit.Sprintf("Function %s is not a function", op))
 	}
 
 	var ins []reflect.Value
 	var outs []reflect.Value
 
-	pIn := p.Get("in")
-	if toolkit.IsSlice(pIn) {
+	pIn := p.Get("in", nil)
+	if !toolkit.IsSlice(pIn) {
 		ins = append(ins, reflect.ValueOf(pIn))
 	} else {
 		pLen := toolkit.SliceLen(pIn)
 		for pIndex := 0; pIndex < pLen; pIndex++ {
-			ins := append(ins, reflect.ValueOf(toolkit.SliceItem(pIn, pIndex)))
+			ins = append(ins, reflect.ValueOf(toolkit.SliceItem(pIn, pIndex)))
 		}
 	}
+	//toolkit.Println(toolkit.JsonString(ins))
 
 	outs = vfn.Call(ins)
 
-	var vouts []interface{}
+	var iouts []interface{}
 	for _, out := range outs {
-		vouts := out.Interface()
+		iouts = append(iouts, out.Interface())
+	}
+
+	if op == "where" && iouts[0] == false {
+		return nil
+	} else if op == "where" && iouts[0] == true {
+		iouts = []interface{}{}
+		for _, in := range ins {
+			iouts = append(iouts, in.Interface())
+		}
 	}
 
 	//p.Set("output", outs)
-	if p.nextPipe != nil {
-		p.nextPipe.Set("in", vouts)
-		p.nextPipe.Run()
+	if p.nextItem != nil {
+		p.nextItem.Set("in", iouts)
+		return p.nextItem.Run()
 	} else {
-		p.Set("output", vouts)
+		p.Set("output", iouts)
 	}
+
+	return nil
 }
