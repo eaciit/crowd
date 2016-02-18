@@ -64,6 +64,7 @@ func (p *Pipe) Exec(inputs interface{}) error {
 		return nil
 	}
 
+	p.Items[0].Set("parm", inputs)
 	sLen := p.source.Len()
 	for sIndex := 0; sIndex < sLen; sIndex++ {
 		p.Items[0].Set("in", p.source.Seek(sIndex, SeekFromStart))

@@ -81,6 +81,7 @@ func (p *PipeItem) Run() error {
 
 	//p.Set("output", outs)
 	if p.nextItem != nil {
+		p.nextItem.Set("parm", p.Get("parm", nil))
 		p.nextItem.Set("in", iouts)
 		return p.nextItem.Run()
 	} else {
