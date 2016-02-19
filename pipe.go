@@ -3,6 +3,7 @@ package crowd
 import (
 	"errors"
 	"github.com/eaciit/toolkit"
+	"reflect"
 )
 
 type ApplyScope string
@@ -113,7 +114,11 @@ func (p *Pipe) SetOutput(o interface{}) *Pipe {
 	pi := new(PipeItem)
 	pi.Set("op", "setoutput")
 	pi.Set("fn", func(x interface{}) {
-		toolkit.AppendSlice(o, x)
+		if toolkit.IsSlice(o) {
+			toolkit.AppendSlice(o, x)
+		} else {
+			reflect.ValueOf(o).Elem().Set(reflect.ValueOf(x))
+		}
 	})
 	eadd := p.addItem(pi)
 	if eadd != nil {

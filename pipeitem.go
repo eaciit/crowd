@@ -76,6 +76,17 @@ func (p *PipeItem) Run() error {
 		}
 	}
 
+	if op == "mapreduce" {
+		if len(ins) > 0 {
+			if p.reduceTemp == nil {
+				p.reduceTemp = ins[len(ins)-1].Interface()
+			} else {
+				ins[len(ins)-1] = reflect.ValueOf(p.reduceTemp)
+			}
+			//toolkit.Println("mapreduce set reduceTemp", p.reduceTemp)
+		}
+	}
+
 	if verbose {
 		toolkit.Printf("Data %d Pipe %d %s: %s",
 			p.Get("parm", nil).(toolkit.M).Get("dataindex", 0).(int),
@@ -101,6 +112,10 @@ func (p *PipeItem) Run() error {
 		for _, in := range ins {
 			iouts = append(iouts, in.Interface())
 		}
+	}
+
+	if op == "mapreduce" && len(iouts) > 0 {
+		p.reduceTemp = iouts[0]
 	}
 
 	//p.Set("output", outs)
