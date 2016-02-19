@@ -154,6 +154,15 @@ func (p *Pipe) Sort(fn interface{}) *Pipe {
 }
 
 func (p *Pipe) Reduce(fn interface{}) *Pipe {
+	pi := new(PipeItem)
+	pi.Set("op", "mapreduce")
+	pi.Set("fn", fn)
+	_ = p.addItem(pi)
+	/*
+		if eadd != nil {
+			toolkit.Println("AddReduce:", eadd.Error())
+		}
+	*/
 	return p
 }
 

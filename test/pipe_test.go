@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var dataCount int = 1000
+var dataCount int = 20
 var pipe *crowd.Pipe
 var dataPipe []int
 var outs []int
@@ -52,7 +52,7 @@ func TestWhereMap(t *testing.T) {
 	}
 	pipe1 := new(crowd.Pipe).From(new(crowd.PipeSource).SetData(&dataPipe))
 	pipe1.Where(func(x int) bool {
-		return x <= 100
+		return x <= 300
 	})
 	pipe1.Map(func(x int) struct {
 		X int
@@ -69,20 +69,58 @@ func TestWhereMap(t *testing.T) {
 		t.Fatalf("Error: %s", pipe1.ErrorTxt())
 	}
 
-	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", true))
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", false))
 	if eExec != nil {
 		t.Fatalf("Exec: %s", eExec.Error())
 	}
-	if len(outs) == 0 {
+	if len(outsmap) == 0 {
 		t.Fatalf("No record returned")
 	}
 
 	for idx, v := range outsmap {
-		if v.X > 100 {
+		if v.X > 300 {
 			t.Fatalf("Data index %d, %d > 100", idx, v.X)
 		}
 	}
-	t.Logf("Data: " + toolkit.JsonString(outs[0:10]))
+	t.Logf("Data: " + toolkit.JsonString(outsmap))
+}
+
+func TestWhereMapReduce(t *testing.T) {
+	type xy struct {
+		X int
+		Y int
+	}
+
+	var total1, total2 int
+	var ints []int
+
+	pipe1 := new(crowd.Pipe).From(new(crowd.PipeSource).SetData(&dataPipe))
+	pipe1.Where(func(x int) bool {
+		return x <= 300
+	}).Map(func(x int) xy {
+		return xy{x, x * 2}
+	}).Reduce(func(m xy, b int) int {
+		ints = append(ints, m.Y)
+		return b + m.Y
+	}).SetOutput(&total1)
+	if pipe1.ErrorTxt() != "" {
+		t.Fatalf("Error: %s", pipe1.ErrorTxt())
+	}
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", true))
+	if eExec != nil {
+		t.Fatalf("Exec: %s", eExec.Error())
+	}
+	if len(ints) == 0 {
+		t.Fatalf("No record returned")
+	}
+
+	for _, v := range ints {
+		total2 += v
+	}
+	if total1 != total2 {
+		t.Fatalf("Summation error. Expect %d got %d", total2, total1)
+	}
+	t.Logf("Total: %d Data: %s", total1, toolkit.JsonString(ints))
 }
 
 /*

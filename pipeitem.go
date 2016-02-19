@@ -9,6 +9,8 @@ import (
 type PipeItem struct {
 	attributes toolkit.M
 	nextItem   *PipeItem
+
+	reduceTemp interface{}
 }
 
 func (p *PipeItem) initAttributes() {
@@ -65,6 +67,22 @@ func (p *PipeItem) Run() error {
 	}
 
 	//toolkit.Println(toolkit.JsonString(ins))
+	tfn := vfn.Type()
+	lenIn := tfn.NumIn()
+	if len(ins) < lenIn {
+		for i := len(ins); i < lenIn; i++ {
+			fnin := reflect.New(tfn.In(i)).Elem()
+			ins = append(ins, fnin)
+		}
+	}
+
+	if verbose {
+		toolkit.Printf("Data %d Pipe %d %s: %s",
+			p.Get("parm", nil).(toolkit.M).Get("dataindex", 0).(int),
+			p.Get("index", 0).(int), op,
+			toolkit.JsonString(pIn))
+	}
+
 	outs = vfn.Call(ins)
 
 	var iouts []interface{}
@@ -73,11 +91,7 @@ func (p *PipeItem) Run() error {
 	}
 
 	if verbose {
-		toolkit.Printf("Data %d Pipe %d %s: %s => %s\n",
-			p.Get("parm", nil).(toolkit.M).Get("dataindex", 0).(int),
-			p.Get("index", 0).(int), op,
-			toolkit.JsonString(pIn),
-			toolkit.JsonString(iouts))
+		toolkit.Printf(" => %s\n", toolkit.JsonString(iouts))
 	}
 
 	if op == "where" && iouts[0] == false {
