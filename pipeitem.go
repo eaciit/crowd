@@ -11,7 +11,8 @@ type PipeItem struct {
 	nextItem      *PipeItem
 	noParralelism bool
 
-	reduceTemp interface{}
+	parallelManager *ParallelManager
+	reduceTemp      interface{}
 }
 
 func (p *PipeItem) initAttributes() {
@@ -36,21 +37,31 @@ func (p *PipeItem) SetError(err string) error {
 
 func (p *PipeItem) Run() error {
 	op := strings.ToLower(p.Get("op", "").(string))
+	parm := p.Get("parm", toolkit.M{}).(toolkit.M)
+	verbose := parm.Get("verbose", false).(bool)
+	pIn := p.Get("in", nil)
+
+	if op == "" {
+		//p.Set("error", "OP is mandatory")
+		return p.SetError("OP is mandatory")
+	}
+
 	if op == "parallel" {
 		if p.nextItem == nil {
 			return p.SetError("NextItem is nil. Parallel should be following with another PipeItem")
 		} else {
-			p.nextItem.Set("parm", p.Get("parm", nil))
-			p.nextItem.Set("in", p.Get("in", nil))
-			return p.nextItem.Run()
+			/*
+				p.nextItem.Set("parm", p.Get("parm", nil))
+				p.nextItem.Set("in", p.Get("in", nil))
+				return p.nextItem.Run()
+			*/
+			if p.parallelManager == nil {
+				p.parallelManager, _ = NewParallelManager(p.Get("parallel", 1).(int), p.nextItem)
+				p.parallelManager.Wait()
+			}
+			p.parallelManager.SendKey(pIn)
+			return nil
 		}
-	}
-
-	parm := p.Get("parm", toolkit.M{}).(toolkit.M)
-	verbose := parm.Get("verbose", false).(bool)
-	if op == "" {
-		//p.Set("error", "OP is mandatory")
-		return p.SetError("OP is mandatory")
 	}
 
 	//fn := p.Get("fn_"+op, nil)
@@ -67,7 +78,6 @@ func (p *PipeItem) Run() error {
 	var ins []reflect.Value
 	var outs []reflect.Value
 
-	pIn := p.Get("in", nil)
 	if !toolkit.IsSlice(pIn) {
 		ins = append(ins, reflect.ValueOf(pIn))
 	} else {

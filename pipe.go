@@ -112,6 +112,7 @@ func (p *Pipe) Parallel(i int) *Pipe {
 
 func (p *Pipe) SetOutput(o interface{}) *Pipe {
 	pi := new(PipeItem)
+	pi.noParralelism = true
 	pi.Set("op", "setoutput")
 	pi.Set("fn", func(x interface{}) {
 		if toolkit.IsSlice(o) {
@@ -160,6 +161,7 @@ func (p *Pipe) Sort(fn interface{}) *Pipe {
 
 func (p *Pipe) Reduce(fn interface{}) *Pipe {
 	pi := new(PipeItem)
+	pi.noParralelism = true
 	pi.Set("op", "mapreduce")
 	pi.Set("fn", fn)
 	_ = p.addItem(pi)

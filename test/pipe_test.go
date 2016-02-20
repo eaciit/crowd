@@ -147,7 +147,8 @@ func TestWhereMapReducePartition(t *testing.T) {
 	if pipe1.ErrorTxt() != "" {
 		t.Fatalf("Error: %s", pipe1.ErrorTxt())
 	}
-	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", false))
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", true))
+	//time.Sleep(500 * time.Millisecond)
 	if eExec != nil {
 		t.Fatalf("Exec: %s", eExec.Error())
 	}
