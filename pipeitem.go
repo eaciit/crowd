@@ -7,8 +7,9 @@ import (
 )
 
 type PipeItem struct {
-	attributes toolkit.M
-	nextItem   *PipeItem
+	attributes    toolkit.M
+	nextItem      *PipeItem
+	noParralelism bool
 
 	reduceTemp interface{}
 }
@@ -34,9 +35,19 @@ func (p *PipeItem) SetError(err string) error {
 }
 
 func (p *PipeItem) Run() error {
+	op := strings.ToLower(p.Get("op", "").(string))
+	if op == "parallel" {
+		if p.nextItem == nil {
+			return p.SetError("NextItem is nil. Parallel should be following with another PipeItem")
+		} else {
+			p.nextItem.Set("parm", p.Get("parm", nil))
+			p.nextItem.Set("in", p.Get("in", nil))
+			return p.nextItem.Run()
+		}
+	}
+
 	parm := p.Get("parm", toolkit.M{}).(toolkit.M)
 	verbose := parm.Get("verbose", false).(bool)
-	op := strings.ToLower(p.Get("op", "").(string))
 	if op == "" {
 		//p.Set("error", "OP is mandatory")
 		return p.SetError("OP is mandatory")

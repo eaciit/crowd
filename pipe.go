@@ -97,11 +97,11 @@ func (p *Pipe) ParseAndExec(inputs interface{}, reparse bool) {
 }
 */
 
-func (p *Pipe) Partition(i int) *Pipe {
+func (p *Pipe) Parallel(i int) *Pipe {
 	//p.Set("partition", i)
 	pi := new(PipeItem)
-	pi.Set("op", "partition")
-	pi.Set("partition", i)
+	pi.Set("op", "parallel")
+	pi.Set("parallel", i)
 	eadd := p.addItem(pi)
 	if eadd != nil {
 		p.SetError(eadd.Error())

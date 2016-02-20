@@ -4,9 +4,10 @@ import (
 	"github.com/eaciit/crowd"
 	"github.com/eaciit/toolkit"
 	"testing"
+	"time"
 )
 
-var dataCount int = 20
+var dataCount int = 200
 var pipe *crowd.Pipe
 var dataPipe []int
 var outs []int
@@ -42,7 +43,7 @@ func TestLoad(t *testing.T) {
 				idx, val, outs[idx])
 		}
 	}
-	t.Logf("Data: " + toolkit.JsonString(outs[0:20]))
+	toolkit.Printfn("Data: " + toolkit.JsonString(outs[0:20]))
 }
 
 func TestWhereMap(t *testing.T) {
@@ -82,7 +83,7 @@ func TestWhereMap(t *testing.T) {
 			t.Fatalf("Data index %d, %d > 100", idx, v.X)
 		}
 	}
-	t.Logf("Data: " + toolkit.JsonString(outsmap))
+	toolkit.Printfn("Data: " + toolkit.JsonString(outsmap))
 }
 
 func TestWhereMapReduce(t *testing.T) {
@@ -98,6 +99,7 @@ func TestWhereMapReduce(t *testing.T) {
 	pipe1.Where(func(x int) bool {
 		return x <= 300
 	}).Map(func(x int) xy {
+		time.Sleep(10 * time.Millisecond)
 		return xy{x, x * 2}
 	}).Reduce(func(m xy, b int) int {
 		ints = append(ints, m.Y)
@@ -106,7 +108,7 @@ func TestWhereMapReduce(t *testing.T) {
 	if pipe1.ErrorTxt() != "" {
 		t.Fatalf("Error: %s", pipe1.ErrorTxt())
 	}
-	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", true))
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", false))
 	if eExec != nil {
 		t.Fatalf("Exec: %s", eExec.Error())
 	}
@@ -120,7 +122,46 @@ func TestWhereMapReduce(t *testing.T) {
 	if total1 != total2 {
 		t.Fatalf("Summation error. Expect %d got %d", total2, total1)
 	}
-	t.Logf("Total: %d Data: %s", total1, toolkit.JsonString(ints))
+	toolkit.Printfn("Total: %d Data: %s", total1, toolkit.JsonString(ints))
+}
+
+func TestWhereMapReducePartition(t *testing.T) {
+	type xy struct {
+		X int
+		Y int
+	}
+
+	var total1, total2 int
+	var ints []int
+
+	pipe1 := new(crowd.Pipe).From(new(crowd.PipeSource).SetData(&dataPipe))
+	pipe1.Parallel(5).Where(func(x int) bool {
+		return x <= 300
+	}).Map(func(x int) xy {
+		time.Sleep(10 * time.Millisecond)
+		return xy{x, x * 2}
+	}).Reduce(func(m xy, b int) int {
+		ints = append(ints, m.Y)
+		return b + m.Y
+	}).SetOutput(&total1)
+	if pipe1.ErrorTxt() != "" {
+		t.Fatalf("Error: %s", pipe1.ErrorTxt())
+	}
+	eExec := pipe1.Exec(toolkit.M{}.Set("verbose", false))
+	if eExec != nil {
+		t.Fatalf("Exec: %s", eExec.Error())
+	}
+	if len(ints) == 0 {
+		t.Fatalf("No record returned")
+	}
+
+	for _, v := range ints {
+		total2 += v
+	}
+	if total1 != total2 {
+		t.Fatalf("Summation error. Expect %d got %d", total2, total1)
+	}
+	toolkit.Printfn("Total: %d Data: %s", total1, toolkit.JsonString(ints))
 }
 
 /*
