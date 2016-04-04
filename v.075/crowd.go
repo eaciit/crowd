@@ -207,14 +207,14 @@ func (c *Crowd) Exec() (*Crowd, error) {
 			Index   int
 			SortKey interface{}
 		}
-
+		c.Result.Sort = c.data
 		fn := _fn(cmd.fnSort)
-		keysorter, esort := NewSorter(c.data, fn)
+		keysorter, esort := NewSorter(c.Result.Sort, fn)
 		if esort != nil {
 			e = errors.New("crowd.Sort: " + esort.Error())
 		}
 		keysorter.Sort(cmd.sortDir)
-		c.Result.Sort = c.data
+		//		c.Result.Sort = c.data
 	}
 	return c, e
 }
