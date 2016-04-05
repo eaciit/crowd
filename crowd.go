@@ -1,8 +1,6 @@
 package crowd
 
 import (
-	"errors"
-
 	"github.com/eaciit/toolkit"
 )
 
@@ -28,11 +26,36 @@ type CrowdResult struct {
 	Group map[interface{}][]interface{}
 	Sort  interface{}
 }
+
+type CommandType string
+const (
+    CommandMin  CommandType = "min"
+    CommandMax = "max"
+    CommandSum = "sum"
+    CommandAvg = "avg"
+    CommandSort = "sort"
+    CommandGroup = "group"
+    CommandGroupAgg = "groupagg"
+    CommandWhere = "where"
+    CommandApply = "apply"
+    CommandJoin = "join"
+)
+
 type Crowd struct {
 	SliceBase
 	Error  error
 	Result CrowdResult
+    
+    commands []*Command
 }
+
+type Command struct{
+    CommandType CommandType
+    Parms *toolkit.M
+    Fns []FnCrowd
+}
+
+/*
 type Command struct {
 	isFrom       bool
 	isAvg        bool
@@ -50,56 +73,82 @@ type Command struct {
 	fnSort       FnCrowd
 	sortDir      SortDirection
 }
+*/
 
-var cmd = Command{}
 
-func GetCommand() Command {
-	return cmd
+func newCommand(commandType CommandType, functions ...FnCrowd) *Command{
+    c := new(Command)
+    c.CommandType = commandType
+    c.Fns = functions
+    c.Parms = &toolkit.M{}
+    return c
 }
 
 func From(data interface{}) *Crowd {
 	c := new(Crowd)
 	c.SetData(data)
-	cmd.isFrom = true
+    //cmd.isFrom = true
 	return c
 }
 
 func (c *Crowd) Avg(fn FnCrowd) *Crowd {
-	cmd.isAvg = true
-	cmd.fnAvg = fn
-	return c
+	c.commands = append(c.commands, newCommand(CommandAvg, fn))
+    return c
 }
 func (c *Crowd) Min(fn FnCrowd) *Crowd {
-	cmd.isMin = true
-	cmd.fnMin = fn
-	return c
+	c.commands = append(c.commands, newCommand(CommandMin, fn))
+    return c
+}
 
-}
 func (c *Crowd) Max(fn FnCrowd) *Crowd {
-	cmd.isMax = true
-	cmd.fnMax = fn
-	return c
+	c.commands = append(c.commands, newCommand(CommandMax, fn))
+    return c
 }
+
 func (c *Crowd) Sum(fn FnCrowd) *Crowd {
-	cmd.isSum = true
-	cmd.fnSum = fn
-	return c
+	c.commands = append(c.commands, newCommand(CommandSum, fn))
+    return c
 }
+
 func (c *Crowd) Group(fnGroupKey FnCrowd, fnGroupChild FnCrowd) *Crowd {
-	cmd.isGroup = true
-	cmd.fnGroupKey = fnGroupKey
-	cmd.fnGroupChild = fnGroupChild
-	return c
+	c.commands = append(c.commands, newCommand(CommandGroup, fnGroupKey, fnGroupChild))
+    return c
 }
+
+func (c *Crowd) Where(fn FnCrowd) *Crowd {
+    cmd := newCommand(CommandWhere, fn)
+  	c.commands = append(c.commands, cmd)
+    return c
+}
+
+func (c *Crowd) Apply(fn FnCrowd) *Crowd {
+    cmd := newCommand(CommandApply, fn)
+  	c.commands = append(c.commands, cmd)
+    return c
+}
+
+
 func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
-	cmd.isSort = true
-	cmd.fnSort = fn
-	cmd.sortDir = sortDirection
-	return c
+    cmdSort := newCommand(CommandSort, fn)
+    cmdSort.Parms.Set("direction", sortDirection)
+	c.commands = append(c.commands, cmdSort)
+    return c
+}
+
+func (cmd *Command) Exec(c *Crowd)error{
+    return nil
 }
 
 func (c *Crowd) Exec() (*Crowd, error) {
-	var e error
+    for _, cmd := range c.commands{
+        e:=cmd.Exec(c)
+        if e!=nil {
+            return c, e
+        }
+    }
+    return nil, nil
+	/*
+    var e error
 	if !cmd.isFrom {
 		return c, errors.New("From data not defined.")
 	}
@@ -217,4 +266,5 @@ func (c *Crowd) Exec() (*Crowd, error) {
 		//		c.Result.Sort = c.data
 	}
 	return c, e
+    */
 }
