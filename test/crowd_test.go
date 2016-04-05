@@ -1,22 +1,19 @@
-package crowd075_test
+package crowd_test
 
 import (
 	"log"
 	"math"
 	"testing"
-
 	"github.com/eaciit/toolkit"
-
-	"sync"
-
-	"github.com/eaciit/crowd/v.075"
+    "sync"
+	crowd "./.."
 )
 
-var c *crowd075.Crowd
+var c *crowd.Crowd
 
 //func TestFrom(t *testing.T) {
 //	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-//	c = crowd075.From(&data)
+//	c = crowd.From(&data)
 //	log.Printf("c.data => %v", c.SliceBase.GetData())
 //}
 func TestChainLittleData(t *testing.T) {
@@ -36,9 +33,9 @@ func TestChainLittleData(t *testing.T) {
 	//			int(math.Mod(float64(x.(int)), float64(100))),
 	//		}
 	//	}
-	//	c, err := crowd075.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd075.SortAscending, nil).Exec()
-	c, err := crowd075.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Sort(crowd075.SortAscending, nil).Exec()
-	log.Printf("c.Command => %#v", crowd075.GetCommand())
+	//	c, err := crowd.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd.SortAscending, nil).Exec()
+	c, err := crowd.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Sort(crowd.SortAscending, nil).Exec()
+	log.Printf("c.Command => %#v", crowd.GetCommand())
 	log.Printf("c.result => %#v ; error => %#v", c.Result, err)
 	log.Printf("After sorting Ascending:  %#v ", toolkit.JsonString(c.Result.Sort))
 	log.Printf("c.data => %v", c.SliceBase.GetData())
@@ -76,10 +73,10 @@ func TestChainBigData(t *testing.T) {
 			int(math.Mod(float64(x.(int)), float64(100))),
 		}
 	}
-	c, err := crowd075.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd075.SortAscending, nil).Exec()
-	//	c, err := crowd075.From(&data).Group(fnGroupKey, fnGroupChild).Exec()
-	//	c, err := v.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Sort(crowd075.SortAscending, nil).Exec()
-	log.Printf("c.Command => %#v", crowd075.GetCommand())
+	c, err := crowd.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd.SortAscending, nil).Exec()
+	//	c, err := crowd.From(&data).Group(fnGroupKey, fnGroupChild).Exec()
+	//	c, err := v.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Sort(crowd.SortAscending, nil).Exec()
+	log.Printf("c.Command => %#v", crowd.GetCommand())
 	//	log.Printf("c.result => %#v ; error => %#v", c.Result, err)
 	log.Printf("c.Result.Avg => %#v", c.Result.Avg)
 	log.Printf("c.Result.Min => %#v", c.Result.Min)
@@ -109,9 +106,9 @@ func TestChainLittleString(t *testing.T) {
 	//			int(math.Mod(float64(x.(int)), float64(100))),
 	//		}
 	//	}
-	//	c, err := crowd075.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd075.SortAscending, nil).Exec()
-	c, err := crowd075.From(&data).Avg(nil).Min(nil).Max(nil).Sum(nil).Sort(crowd075.SortAscending, nil).Exec()
-	log.Printf("c.Command => %#v", crowd075.GetCommand())
+	//	c, err := crowd.From(&data).Avg(fn).Min(fn).Max(fn).Sum(fn).Group(fnGroupKey, fnGroupChild).Sort(crowd.SortAscending, nil).Exec()
+	c, err := crowd.From(&data).Avg(nil).Min(nil).Max(nil).Sum(nil).Sort(crowd.SortAscending, nil).Exec()
+	log.Printf("c.Command => %#v", crowd.GetCommand())
 	log.Printf("c.result => %#v ; error => %#v", c.Result, err)
 	toolkit.Println("After sorting Ascending: ", toolkit.JsonString(c.Result.Sort))
 	log.Printf("c.data => %v", c.SliceBase.GetData())
