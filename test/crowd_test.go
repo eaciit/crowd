@@ -1,12 +1,12 @@
 package crowd_test
 
 import (
-	"log"
+    "log"
 	"math"
 	"testing"
-	"github.com/eaciit/toolkit"
-    "sync"
-	crowd "./.."
+	"sync"
+    "github.com/eaciit/toolkit"
+    "github.com/eaciit/crowd.dev"
 )
 
 var c *crowd.Crowd
