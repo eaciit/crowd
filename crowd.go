@@ -49,6 +49,13 @@ type Crowd struct {
     commands []*Command
 }
 
+func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
+    fn = _fn(fn)
+	cmdSort := newCommand(CommandSort, fn)
+    cmdSort.Parms.Set("direction", sortDirection)
+	c.commands = append(c.commands, cmdSort)
+    return c
+}
 
 func (c *Crowd) Exec() (*Crowd, error) {
     for _, cmd := range c.commands{
