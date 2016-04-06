@@ -76,8 +76,8 @@ func TestAggr(t *testing.T){
     skipIfNil(t)
     c2 := c.Min(fn).Max(fn).Sum(fn).Avg(fn).Exec()
     check(t, c2.Error, "Aggr")
-    if c2.Result.Min!=toolkit.ToFloat64(min,4,toolkit.RoundingAuto) || 
-        c2.Result.Max!=toolkit.ToFloat64(max,4,toolkit.RoundingAuto) || 
+    if toolkit.ToInt(c2.Result.Min, toolkit.RoundingAuto)!=min || 
+        toolkit.ToInt(c2.Result.Max, toolkit.RoundingAuto)!=max || 
         c2.Result.Sum!=toolkit.ToFloat64(sum,4,toolkit.RoundingAuto) || 
         c2.Result.Avg!=avg {
         t.Fatalf("Error aggr. Got %v\n", toolkit.JsonString(c2.Result))
@@ -106,21 +106,21 @@ func TestWhereSelectGroup(t *testing.T){
         return x.(float64)-math.Mod(x.(float64), float64(100))
     }, nil).Exec()
     check(t, cgroup.Error, "")
-    datas := cgroup.Result.Data().(map[interface{}]interface{})
-    for k, v := range datas{
+    datas := cgroup.Result.Data().([]crowd.KV)
+    for _, v := range datas{
         toolkit.Printf(
             "Group %f: sample first 5 data: %v\n", 
-            k, v.([]float64)[:5])
+            v.Key, v.Value.([]float64)[:5])
     }    
     
-    cgroupaggr := cselect.GroupAggr(func(x interface{})interface{}{
-        return x.(float64)-math.Mod(x.(float64), float64(100))
-    }, func(x interface{})interface{}{
-        return crowd.From(x.([]float64)).Sum(nil).Exec().Result.Sum
+    cgroupaggr := cselect.Apply(func(x interface{})interface{}{
+        kv := x.(crowd.KV)
+        vs := kv.Value.([]float64)
+        sum := crowd.From(&vs).Sum(nil).Exec().Result.Sum
+        return crowd.KV{kv.Key, sum}
     }).Exec()
     check(t, cgroupaggr.Error, "")
-    toolkit.Println("GroupAggr: First 20 data: ", toolkit.JsonString(cgroupaggr.Result.Data().([]float64)[:20]))    
-    
+    toolkit.Println("GroupAggr: First 20 data: ", toolkit.JsonString(cgroupaggr.Result.Data().([]crowd.KV)))    
 }
 
 /*

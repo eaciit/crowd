@@ -6,6 +6,11 @@ import (
     "github.com/eaciit/toolkit"
 )
 
+type KV struct {
+    Key interface{}
+    Value interface{}
+}
+
 type FnJoinKey func(interface{},interface{})bool
 type FnJoinSelect func(interface{},interface{})interface{}
 type CommandType string
@@ -16,7 +21,6 @@ const (
     CommandAvg = "avg"
     CommandSort = "sort"
     CommandGroup = "group"
-    CommandGroupAggr = "groupaggr"
     CommandWhere = "where"
     CommandApply = "apply"
     CommandJoin = "join"
@@ -66,13 +70,6 @@ func (c *Crowd) Group(fnGroupKey FnCrowd, fnGroupChild FnCrowd) *Crowd {
     return c
 }
 
-func (c *Crowd) GroupAggr(fnGroupKey FnCrowd, fnGroupChild FnCrowd) *Crowd {
-	fnGroupKey = _fn(fnGroupKey)
-    fnGroupChild = _fn(fnGroupChild)
-	c.commands = append(c.commands, newCommand(CommandGroupAggr, fnGroupKey, fnGroupChild))
-    return c
-} 
-
 func (c *Crowd) Where(fn FnCrowd) *Crowd {
     fn = _fn(fn)
     cmd := newCommand(CommandWhere, fn)
@@ -120,7 +117,7 @@ func (cmd *Command) Exec(c *Crowd)error{
 			item := fn(c.Item(i))
 			if i==0 {
                 ret=item
-            } else if toolkit.Compare(ret, item, "gt") {
+            } else if toolkit.Compare(ret, item, "$gt") {
                 ret=item
             }
 		}
@@ -132,7 +129,7 @@ func (cmd *Command) Exec(c *Crowd)error{
 			item := fn(c.Item(i))
 			if i==0 {
                 ret=item
-            } else if toolkit.Compare(ret, item, "lt") {
+            } else if toolkit.Compare(ret, item, "$lt") {
                 ret=item
             }
 		}
@@ -180,7 +177,8 @@ func (cmd *Command) Exec(c *Crowd)error{
         fng := cmd.Fns[0]
         fnc := cmd.Fns[1]
         mvs := map[interface{}]reflect.Value{}
-        mvo := map[interface{}]interface{}{}
+        //mvo := map[interface{}]interface{}{}
+        var mvo []KV
         for i := 0; i < l; i++ {
 		    item := c.Item(i)
             g := fng(item)
@@ -195,7 +193,7 @@ func (cmd *Command) Exec(c *Crowd)error{
             mvs[g]=array
         }
         for k, v := range mvs{
-            mvo[k]=v.Interface()
+            mvo = append(mvo, KV{k,v.Interface()})
         }
         c.Result.data = mvo
         c.data = mvo
