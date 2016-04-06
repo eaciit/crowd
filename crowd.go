@@ -1,7 +1,8 @@
 package crowd
 
 import (
-	//"github.com/eaciit/toolkit"
+    "errors"
+	"github.com/eaciit/toolkit"
 )
 
 type FnCrowd func(x interface{}) interface{}
@@ -19,12 +20,10 @@ func _fn(f FnCrowd) FnCrowd {
 }
 
 type CrowdResult struct {
-	Avg   interface{}
 	Min   interface{}
 	Max   interface{}
-	Sum   interface{}
-	Group map[interface{}][]interface{}
-	Sort  interface{}
+	Avg   float64
+	Sum   float64
 }
 
 type CommandType string
@@ -44,9 +43,26 @@ const (
 type Crowd struct {
 	SliceBase
 	Error  error
-	Result CrowdResult
+	Result *CrowdResult
     
     commands []*Command
+}
+
+func From(data interface{}) *Crowd {
+	c := new(Crowd)
+    c.Result = &CrowdResult{}
+	e := c.SetData(data)
+    if e!=nil {
+        c.Error = errors.New("From: " + e.Error())
+    }
+   return c
+}
+
+func (c *Crowd) Len() int{
+    if c.data==nil {
+        return 0
+    }
+    return toolkit.SliceLen(c.data)
 }
 
 func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
@@ -57,14 +73,14 @@ func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
     return c
 }
 
-func (c *Crowd) Exec() (*Crowd, error) {
+func (c *Crowd) Exec() *Crowd {
     for _, cmd := range c.commands{
         e:=cmd.Exec(c)
         if e!=nil {
-            return c, e
+            return c
         }
     }
-    return nil, nil
+    return c
 	/*
     var e error
 	if !cmd.isFrom {
