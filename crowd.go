@@ -24,21 +24,12 @@ type CrowdResult struct {
 	Max   interface{}
 	Avg   float64
 	Sum   float64
+    data  interface{}
 }
 
-type CommandType string
-const (
-    CommandMin  CommandType = "min"
-    CommandMax = "max"
-    CommandSum = "sum"
-    CommandAvg = "avg"
-    CommandSort = "sort"
-    CommandGroup = "group"
-    CommandGroupAgg = "groupagg"
-    CommandWhere = "where"
-    CommandApply = "apply"
-    CommandJoin = "join"
-)
+func (cr *CrowdResult) Data() interface{}{
+    return cr.data
+}
 
 type Crowd struct {
 	SliceBase
@@ -74,9 +65,17 @@ func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
 }
 
 func (c *Crowd) Exec() *Crowd {
+    defer func(){
+       c.commands = []*Command{} 
+    }()
+    if len(c.commands)==0{
+        c.Error = errors.New("Exec: no command")
+        return c
+    }
     for _, cmd := range c.commands{
         e:=cmd.Exec(c)
         if e!=nil {
+            c.Error = e
             return c
         }
     }

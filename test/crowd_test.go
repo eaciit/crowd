@@ -2,7 +2,7 @@ package crowd_test
 
 import (
     //"log"
-	//"math"
+	"math"
 	"testing"
 	//"sync"
     "github.com/eaciit/toolkit"
@@ -82,8 +82,46 @@ func TestAggr(t *testing.T){
         c2.Result.Avg!=avg {
         t.Fatalf("Error aggr. Got %v\n", toolkit.JsonString(c2.Result))
     }
+    toolkit.Println("Value: ", toolkit.JsonString(c2.Result))
 }
 
+func TestWhereSelectGroup(t *testing.T){
+    skipIfNil(t)
+    cwhere := c.Where(func(x interface{})interface{}{
+        if x.(Obj).I<200{
+            return true
+        }
+        return false
+    }).Exec()
+    check(t,cwhere.Error,"")
+    toolkit.Println("First 20 data: ", toolkit.JsonString(cwhere.Result.Data().([]Obj)[:20]))    
+    
+    cselect := cwhere.Apply(func(x interface{})interface{}{
+        return x.(Obj).F
+    }).Exec()
+    check(t, cselect.Error, "")
+    toolkit.Println("Select : First 20 data: ", toolkit.JsonString(cselect.Result.Data().([]float64)[:20]))    
+    
+    cgroup := cselect.Group(func(x interface{})interface{}{
+        return x.(float64)-math.Mod(x.(float64), float64(100))
+    }, nil).Exec()
+    check(t, cgroup.Error, "")
+    datas := cgroup.Result.Data().(map[interface{}]interface{})
+    for k, v := range datas{
+        toolkit.Printf(
+            "Group %f: sample first 5 data: %v\n", 
+            k, v.([]float64)[:5])
+    }    
+    
+    cgroupaggr := cselect.GroupAggr(func(x interface{})interface{}{
+        return x.(float64)-math.Mod(x.(float64), float64(100))
+    }, func(x interface{})interface{}{
+        return crowd.From(x.([]float64)).Sum(nil).Exec().Result.Sum
+    }).Exec()
+    check(t, cgroupaggr.Error, "")
+    toolkit.Println("GroupAggr: First 20 data: ", toolkit.JsonString(cgroupaggr.Result.Data().([]float64)[:20]))    
+    
+}
 
 /*
 //func TestFrom(t *testing.T) {
