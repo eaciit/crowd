@@ -103,15 +103,13 @@ func TestWhereSelectGroup(t *testing.T){
     toolkit.Println("Select : First 20 data: ", toolkit.JsonString(cselect.Result.Data().([]float64)[:20]))    
     
     cgroup := cselect.Group(func(x interface{})interface{}{
-        return x.(float64)-math.Mod(x.(float64), float64(100))
+        return (x.(float64)-math.Mod(x.(float64), float64(100)))/float64(100)
     }, nil).Exec()
     check(t, cgroup.Error, "")
     datas := cgroup.Result.Data().([]crowd.KV)
     for _, v := range datas{
-        toolkit.Printf(
-            "Group %f: sample first 5 data: %v\n", 
-            v.Key, v.Value.([]float64)[:5])
-    }    
+        toolkit.Printf("Group %2.0f: sample first 5 data: %v\n", 
+            v.Key, v.Value.([]float64)[:5])}    
     
     cgroupaggr := cselect.Apply(func(x interface{})interface{}{
         kv := x.(crowd.KV)
