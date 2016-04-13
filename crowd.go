@@ -1,361 +1,203 @@
 package crowd
 
 import (
-	//"fmt"
-	"reflect"
-	"sync"
-	"time"
+    "errors"
+	"github.com/eaciit/toolkit"
 )
 
-type E map[interface{}]interface{}
-type FnTo func(interface{}) interface{}
+type FnCrowd func(x interface{}) interface{}
 
-var (
-	self FnTo = func(x interface{}) interface{} {
-		return x
+var Self FnCrowd = func(x interface{}) interface{} {
+	return x
+}
+
+func _fn(f FnCrowd) FnCrowd {
+	if f == nil {
+		return Self
+	} else {
+		return f
 	}
-)
+}
+
+type CrowdResult struct {
+	Min   interface{}
+	Max   interface{}
+	Avg   float64
+	Sum   float64
+    data  interface{}
+}
+
+func (cr *CrowdResult) Data() interface{}{
+    return cr.data
+}
 
 type Crowd struct {
-	Data E
-	Keys []interface{}
+	SliceBase
+	Error  error
+	Result *CrowdResult
+    
+    commands []*Command
 }
 
-func From(d interface{}) *Crowd {
+func From(data interface{}) *Crowd {
 	c := new(Crowd)
-	c.Data = E{}
-	c.Keys = []interface{}{}
-	tof := reflect.TypeOf(d).Kind()
-	if tof == reflect.Map {
-		es := d.(E)
-		for k, v := range es {
-			c.Data[k] = v
-			c.Keys = append(c.Keys, k)
+    c.Result = &CrowdResult{}
+	e := c.SetData(data)
+    if e!=nil {
+        c.Error = errors.New("From: " + e.Error())
+    }
+   return c
+}
+
+func (c *Crowd) Len() int{
+    if c.data==nil {
+        return 0
+    }
+    return toolkit.SliceLen(c.data)
+}
+
+func (c *Crowd) Sort(sortDirection SortDirection, fn FnCrowd) *Crowd {
+    fn = _fn(fn)
+	cmdSort := newCommand(CommandSort, fn)
+    cmdSort.Parms.Set("direction", sortDirection)
+	c.commands = append(c.commands, cmdSort)
+    return c
+}
+
+func (c *Crowd) Exec() *Crowd {
+    defer func(){
+       c.commands = []*Command{} 
+    }()
+    if len(c.commands)==0{
+        c.Error = errors.New("Exec: no command")
+        return c
+    }
+    for _, cmd := range c.commands{
+        e:=cmd.Exec(c)
+        if e!=nil {
+            c.Error = e
+            return c
+        }
+    }
+    return c
+	/*
+    var e error
+	if !cmd.isFrom {
+		return c, errors.New("From data not defined.")
+	}
+	if cmd.isAvg {
+		c.Result.Avg = 0
+		l := c.Len()
+		if l == 0 {
+			return c, nil
 		}
-	} else if tof == reflect.Slice {
-		var slice reflect.Value
-		slice = reflect.ValueOf(d)
-		lenslice := slice.Len()
-		for i := 0; i < lenslice; i++ {
-			c.Data[i] = slice.Index(i).Interface()
-			c.Keys = append(c.Keys, i)
-		}
-	}
-	return c
-}
-
-func (c *Crowd) Slice() []interface{} {
-	ret := []interface{}{}
-	for _, v := range c.Data {
-		ret = append(ret, v)
-	}
-	return ret
-}
-
-func (c *Crowd) Len() int {
-	if c.Data == nil {
-		return 0
-	} else {
-		return len(c.Data)
-	}
-}
-
-func toF64(i interface{}) float64 {
-	if f64, ok := i.(float64); ok {
-		return f64
-	} else if f32, ok := i.(float32); ok {
-		return float64(f32)
-	} else if fi, ok := i.(int); ok {
-		return float64(fi)
-	} else {
-		return 0
-	}
-}
-
-func (c *Crowd) Sum(fn FnTo) float64 {
-	var ret float64 = 0
-	if fn == nil {
-		fn = self
-	}
-
-	for _, v := range c.Data {
-		f64 := toF64(fn(v))
-		ret += f64
-	}
-	return ret
-}
-
-func (c *Crowd) Avg(fn FnTo) float64 {
-	var ret float64 = c.Sum(fn) / float64(c.Len())
-	return ret
-}
-
-func (c *Crowd) Group(fnKey, fnValue FnTo) *Crowd {
-	GroupData := E{}
-	if fnKey == nil {
-		fnKey = self
-	}
-	if fnValue == nil {
-		fnValue = self
-	}
-
-	//_ = "breakpoint"
-	wg := new(sync.WaitGroup)
-	mtx := new(sync.Mutex)
-	for _, v := range c.Data {
-		wg.Add(1)
-		go func(v interface{}, GroupData *E,
-			wg *sync.WaitGroup, mtx *sync.Mutex) {
-			gd := *GroupData
-			groupId := fnKey(v)
-			value := fnValue(v)
-			var datas []interface{}
-			//data, exist := GroupData[groupId]
-			mtx.Lock()
-			data, exist := gd[groupId]
-			if !exist {
-				datas = []interface{}{value}
-			} else {
-				datas = append(data.([]interface{}), value)
-			}
-			gd[groupId] = datas
-			mtx.Unlock()
-			wg.Done()
-		}(v, &GroupData, wg, mtx)
-	}
-	wg.Wait()
-	//_ = "breakpoint"
-
-	return From(GroupData)
-}
-
-func (c *Crowd) Subset(take, skip int) *Crowd {
-	idx := 0
-	inloop := true
-	skipped := 0
-	takeFlag := false
-	taken := 0
-	dataLength := c.Len()
-	ret := E{}
-
-	for inloop {
-		if skipped == skip && taken < take {
-			takeFlag = true
-		} else {
-			skipped++
+		ret, _ := toolkit.GetEmptySliceElement(c.data)
+		//toolkit.Println("Value: ", ret, reflect.TypeOf(ret).String())
+		if !toolkit.IsNumber(ret) {
+			return c, nil
 		}
 
-		if takeFlag {
-			ret[c.Keys[taken]] = c.Data[c.Keys[taken]]
-			taken++
-			if taken >= take {
-				inloop = false
+		fn := _fn(cmd.fnAvg)
+		sum := float64(0)
+		for i := 0; i < l; i++ {
+			item := toolkit.ToFloat64(fn(c.Item(i)), 4, toolkit.RoundingAuto)
+			sum += item
+		}
+		//e := toolkit.Serde(sum, &ret, "json")
+		c.Result.Avg = sum / float64(l)
+		//		return c, nil
+	}
+	if cmd.isMin {
+		var min interface{}
+		l := c.Len()
+
+		//min, _ = toolkit.GetEmptySliceElement(c.data)
+		fn := _fn(cmd.fnMin)
+		for i := 0; i < l; i++ {
+			item := fn(c.Item(i))
+			if item == int(0) {
+				toolkit.Println("Item ", i, "=0")
+			}
+			if i == 0 {
+				min = item
+			} else if toolkit.Compare(min, item, "$gt") {
+				min = item
 			}
 		}
-
-		idx++
-		if idx >= dataLength {
-			inloop = false
-		}
+		c.Result.Min = min
+		//		return c, nil
 	}
+	if cmd.isMax {
+		var max interface{}
+		l := c.Len()
 
-	return From(ret)
-}
-
-func (c *Crowd) Max(fn FnTo) interface{} {
-	if fn == nil {
-		fn = self
-	}
-
-	var (
-		maxValue   interface{}
-		maxInt     int
-		maxFloat64 float64
-		maxString  string
-		maxDate    int64
-	)
-
-	for _, val := range c.Data {
-		fnResult := fn(val)
-		v := reflect.ValueOf(fnResult).Kind()
-		b := IsDate(val)
-
-		if v == reflect.String {
-			switch {
-			case fnResult.(string) > maxString:
-				maxString = fnResult.(string)
-			}
-			maxValue = maxString
-		} else if v == reflect.Int || v == reflect.Int8 || v == reflect.Uint ||
-			v == reflect.Uint8 || v == reflect.Uint16 || v == reflect.Uint32 ||
-			v == reflect.Uint64 {
-			switch {
-			case fnResult.(int) > maxInt:
-				maxInt = fnResult.(int)
-			}
-			maxValue = maxInt
-		} else if v == reflect.Float32 || v == reflect.Float64 {
-			switch {
-			case fnResult.(float64) > maxFloat64:
-				maxFloat64 = fnResult.(float64)
-			}
-			maxValue = maxFloat64
-		} else if b == true {
-			dateTime := int64(fnResult.(time.Time).UnixNano())
-			switch {
-			case dateTime > maxDate:
-				maxDate = dateTime
-				maxValue = fnResult
+		max, _ = toolkit.GetEmptySliceElement(c.data)
+		fn := _fn(cmd.fnMax)
+		for i := 0; i < l; i++ {
+			item := fn(c.Item(i))
+			if i == 0 {
+				max = item
+			} else if toolkit.Compare(max, item, "$lt") {
+				max = item
 			}
 		}
+		c.Result.Max = max
 	}
+	if cmd.isSum {
+		l := c.Len()
 
-	return maxValue
-}
-
-func (c *Crowd) Min(fn FnTo) interface{} {
-	if fn == nil {
-		fn = self
-	}
-
-	var (
-		minValue   interface{}
-		minInt     int
-		minFloat64 float64
-		minString  string
-		minDate    int64 = int64(time.Date(time.Now().Year()+10000, time.December, 31, 0, 0, 0, 0, time.UTC).UnixNano())
-		b          bool
-	)
-
-	for key, val := range c.Data {
-		fnResult := fn(val)
-		v := reflect.ValueOf(fnResult).Kind()
-
-		b = IsDate(val)
-
-		if v == reflect.String {
-			switch {
-			case key == 0:
-				minString = fnResult.(string)
-			case fnResult.(string) < minString:
-				minString = fnResult.(string)
-			}
-			minValue = minString
-		} else if v == reflect.Int || v == reflect.Int8 || v == reflect.Uint ||
-			v == reflect.Uint8 || v == reflect.Uint16 || v == reflect.Uint32 ||
-			v == reflect.Uint64 {
-			switch {
-			case key == 0:
-				minInt = fnResult.(int)
-			case fnResult.(int) < minInt:
-				minInt = fnResult.(int)
-			}
-			minValue = minInt
-		} else if v == reflect.Float32 || v == reflect.Float64 {
-			switch {
-			case key == 0:
-				minFloat64 = fnResult.(float64)
-			case val.(float64) < minFloat64:
-				minFloat64 = val.(float64)
-			}
-			minValue = minFloat64
-		} else if b == true {
-			dateTime := int64(fnResult.(time.Time).UnixNano())
-			switch {
-			case dateTime < minDate:
-				minDate = dateTime
-				minValue = fnResult
-			}
-		}
-	}
-
-	return minValue
-}
-
-func (c *Crowd) FindOne(fn func(interface{}) bool) interface{} {
-	var v interface{}
-	for _, val := range c.Data {
-		if fn(val) == true {
-			return val
-		}
-	}
-	return v
-}
-
-func (c *Crowd) Find(fn func(interface{}) bool) *Crowd {
-	var v []interface{}
-	for _, val := range c.Data {
-		if fn(val) == true {
-			v = append(v, val)
+		ret, _ := toolkit.GetEmptySliceElement(c.data)
+		//toolkit.Println("Value: ", ret, reflect.TypeOf(ret).String())
+		if !toolkit.IsNumber(ret) {
+			c.Result.Sum = 0
 		}
 
+		fn := _fn(cmd.fnSum)
+		sum := float64(0)
+		for i := 0; i < l; i++ {
+			item := toolkit.ToFloat64(fn(c.Item(i)), 4, toolkit.RoundingAuto)
+			sum += item
+		}
+		//e := toolkit.Serde(sum, &ret, "json")
+
+		c.Result.Sum = sum
 	}
-	return From(v)
+	if cmd.isGroup {
+		ret := map[interface{}][]interface{}{}
+		l := c.Len()
+		fnKey := _fn(cmd.fnGroupKey)
+		fnChild := _fn(cmd.fnGroupChild)
+		for i := 0; i < l; i++ {
+			item := c.Item(i)
+			k := fnKey(item)
+			v := fnChild(item)
+			_, has := ret[k]
+			if !has {
+				ret[k] = []interface{}{}
+			}
+			ret[k] = append(ret[k], v)
+		}
+		c.Result.Group = ret
+	}
+	if cmd.isSort {
+		l := c.Len()
+		if l == 0 {
+			c.Result.Sort = 0
+		}
+
+		type sk struct {
+			Index   int
+			SortKey interface{}
+		}
+		c.Result.Sort = c.data
+		fn := _fn(cmd.fnSort)
+		keysorter, esort := NewSorter(c.Result.Sort, fn)
+		if esort != nil {
+			e = errors.New("crowd.Sort: " + esort.Error())
+		}
+		keysorter.Sort(cmd.sortDir)
+		//		c.Result.Sort = c.data
+	}
+	return c, e
+    */
 }
-
-func (c *Crowd) Median(fn FnTo) interface{} {
-	var v []interface{}
-	var result float64
-
-	for _, value := range c.Data {
-		v = append(v, value)
-
-	}
-
-	devided := len(v) / 2
-	result = toF64(v[devided])
-	if len(v)%2 == 0 {
-		result = (result + toF64(v[devided-1])) / 2
-	}
-	return result
-}
-
-func (c *Crowd) Mean(fn FnTo) interface{} {
-	var v []interface{}
-	var TotalSum float64
-	var result float64
-
-	for _, value := range c.Data {
-		v = append(v, value)
-	}
-
-	for _, each := range v {
-		TotalSum += toF64(each)
-	}
-	result = TotalSum / toF64(c.Len())
-	return result
-}
-
-func IsDate(o interface{}) bool {
-	t := reflect.TypeOf(o)
-	name := t.PkgPath() + "." + t.Name()
-	if name == "time.Time" {
-		return true
-	}
-	return false
-}
-
-/*
-func (c *Crowd) Sort(fn FnTo) *Crowd {
-	type sortObj Crowd
-
-	func(s *sortObj) Len()int{
-		return s.Len()
-	}
-
-	func (s *sortObj) Swap(i, j int){
-		s.Key[i], s.Keys[j] = s.Keys[j], s.Keys[i]
-	}
-
-	func (s *sortObj) Less(i, j int) bool{
-		fi := fn(s.Data[s.Keys[i]])
-		fj := fn(s.Data[s.Keys[j]])
-		return fi < fj
-	}
-
-	so := c
-	sorting.Sort(so)
-
-	return c
-}
-*/
