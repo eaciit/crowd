@@ -202,6 +202,17 @@ func (cmd *Command) Exec(c *Crowd) error {
 		}
 		c.Result.data = mvo
 		c.data = mvo
+	} else if cmd.CommandType == CommandSort {
+		sorter, e := NewSorter(c.data, cmd.Fns[0])
+		if e != nil {
+			return e
+		}
+
+		var direction SortDirection
+		direction = cmd.Parms.Get("direction", SortAscending).(SortDirection)
+		c.Result.data = sorter.Sort(direction)
+
+		c.data = c.Result.data
 	} else {
 		return errors.New(string(cmd.CommandType) + ": not yet applicable")
 	}

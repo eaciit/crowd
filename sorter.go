@@ -56,5 +56,6 @@ func (s *Sorter) Less(i, j int) bool {
 func (s *Sorter) Sort(direction SortDirection) interface{} {
 	s.Direction = direction
 	sort.Sort(s)
+	//toolkit.Println(toolkit.JsonString(s.data))
 	return s.data
 }

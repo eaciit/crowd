@@ -136,7 +136,8 @@ func TestWhereSelectGroup(t *testing.T) {
 
 	//c = crowd.From(&objs)
 	toolkit.Printfn("Data len: %d", c.Len())
-	oneshot := c.Apply(func(x interface{}) interface{} {
+	c2 := *c
+	oneshot := c2.Apply(func(x interface{}) interface{} {
 		return float64(x.(Obj).I)
 	}).Group(func(x interface{}) interface{} {
 		return (x.(float64) - math.Mod(x.(float64), float64(100))) / float64(100)
@@ -150,4 +151,18 @@ func TestWhereSelectGroup(t *testing.T) {
 	}).Exec()
 	check(t, oneshot.Error, "")
 	toolkit.Println("Oneshot: ", oneshot.Result.Sum)
+}
+
+func TestSort(t *testing.T) {
+	csort := *c
+	csort.Sort(crowd.SortDescending, func(x interface{}) interface{} {
+		return x.(Obj).F
+	}).Apply(func(x interface{}) interface{} {
+		return x.(Obj).F
+	}).Exec()
+	if csort.Error != nil {
+		t.Fatal(csort.Error)
+	}
+	toolkit.Println("Data after sort:",
+		toolkit.JsonString(csort.Result.Data()))
 }
