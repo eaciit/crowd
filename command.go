@@ -88,9 +88,10 @@ func (c *Crowd) Apply(fn FnCrowd) *Crowd {
 }
 
 func (c *Crowd) Join(data interface{}, fnKey FnJoinKey, fnSelect FnJoinSelect) *Crowd {
-	cmd := newCommand(CommandApply)
+	cmd := newCommand(CommandJoin)
 	cmd.FnJoinKey = fnKey
 	cmd.FnJoinSelect = fnSelect
+	cmd.Parms.Set("joindata", data)
 	c.commands = append(c.commands, cmd)
 	return c
 }
@@ -213,6 +214,44 @@ func (cmd *Command) Exec(c *Crowd) error {
 		c.Result.data = sorter.Sort(direction)
 
 		c.data = c.Result.data
+	} else if cmd.CommandType == CommandJoin {
+		joinData := cmd.Parms.Get("joindata")
+		if joinData == nil {
+			return errors.New("crowd.join: Right side join data is nil")
+		}
+		if cmd.FnJoinKey == nil {
+			cmd.FnJoinKey = func(x, y interface{}) bool {
+				return x == y
+			}
+		}
+		if cmd.FnJoinSelect == nil {
+			cmd.FnJoinSelect = func(x, y interface{}) interface{} {
+				return toolkit.M{}.Set("data1", x).Set("data2", y)
+			}
+		}
+		l1 := toolkit.SliceLen(joinData)
+		var array reflect.Value
+		arrayBuilt := false
+		for i := 0; i < l; i++ {
+			item1 := c.Item(i)
+			for i1 := 0; i1 < l1; i1++ {
+				item2 := toolkit.SliceItem(joinData, i1)
+				joinOK := cmd.FnJoinKey(item1, item2)
+				if joinOK {
+					outObj := cmd.FnJoinSelect(item1, item2)
+					if !arrayBuilt {
+						arrayBuilt = true
+						array = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(outObj)), 0, 0)
+					}
+					array = reflect.Append(array, reflect.ValueOf(outObj))
+				}
+			}
+		}
+		if !arrayBuilt {
+			return errors.New("crowd.join: No match")
+		}
+		c.Result.data = array.Interface()
+		c.data = array.Interface()
 	} else {
 		return errors.New(string(cmd.CommandType) + ": not yet applicable")
 	}

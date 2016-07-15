@@ -154,8 +154,7 @@ func TestWhereSelectGroup(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	csort := *c
-	csort.Sort(crowd.SortDescending, func(x interface{}) interface{} {
+	csort := c.Clone().Sort(crowd.SortDescending, func(x interface{}) interface{} {
 		return x.(Obj).F
 	}).Apply(func(x interface{}) interface{} {
 		return x.(Obj).F
@@ -165,4 +164,23 @@ func TestSort(t *testing.T) {
 	}
 	toolkit.Println("Data after sort:",
 		toolkit.JsonString(csort.Result.Data()))
+}
+
+func TestJoin(t *testing.T) {
+	a := []string{"satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh"}
+	b := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+	cjoin := crowd.From(&a).Join(&b, func(x, y interface{}) bool {
+		xi := len(x.(string))
+		yi := y.(int)
+		return xi == yi
+	}, nil).Group(func(x interface{}) interface{} {
+		return x.(toolkit.M).Get("data2")
+	}, func(x interface{}) interface{} {
+		return x.(toolkit.M).Get("data1")
+	}).Exec()
+	if cjoin.Error != nil {
+		t.Fatalf(cjoin.Error.Error())
+	}
+	toolkit.Printfn("Data:\n%s", toolkit.JsonString(cjoin.Result.Data()))
 }
