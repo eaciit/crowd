@@ -179,8 +179,6 @@ func TestJoin(t *testing.T) {
 	}, func(x interface{}) interface{} {
 		return x.(toolkit.M).Get("data1")
 	}).Exec()
-	if cjoin.Error != nil {
-		t.Fatalf(cjoin.Error.Error())
-	}
+	check(t, cjoin.Error, "")
 	toolkit.Printfn("Data:\n%s", toolkit.JsonString(cjoin.Result.Data()))
 }
