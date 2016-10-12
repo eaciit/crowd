@@ -150,7 +150,7 @@ func (cmd *Command) Exec(c *Crowd) error {
 			item := toolkit.ToFloat64(el, 4, toolkit.RoundingAuto)
 			ret += item
 		}
-		c.Result.Avg = ret / toolkit.ToFloat64(l, 0, toolkit.RoundingAuto)
+		c.Result.Avg = toolkit.Div(ret, toolkit.ToFloat64(l, 0, toolkit.RoundingAuto))
 	} else if cmd.CommandType == CommandWhere {
 		fn := cmd.Fns[0]
 		el, _ := toolkit.GetEmptySliceElement(c.data)
